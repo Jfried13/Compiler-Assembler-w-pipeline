@@ -1,0 +1,15 @@
+*.class
+.idea
+.classpath
+.project
+/bin/
+/out/
+/cmake-build-debug/
+*.ser
+*.iml
+*.xml
+a.hex
+*.o
+
+CMakeLists.txt
+
