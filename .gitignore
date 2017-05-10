@@ -1,2 +1,21 @@
+<<<<<<< HEAD
+*.class
+.idea/
+.idea
+.classpath
+.project
+/bin/
+/out/
+/cmake-build-debug/
+*.ser
+*.iml
+*.xml
+a.hex
+*.o
+
+CMakeLists.txt
+
+=======
 CMakeLists.txt
 ./cmake-building-debug
+>>>>>>> 4228902869744ca0d0a139c1af0a6978afa30526
