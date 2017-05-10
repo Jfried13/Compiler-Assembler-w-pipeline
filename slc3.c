@@ -223,11 +223,42 @@ int encounteredBreakPont(CPU_p cpu) {
 		for (i = 0; i < MAX_BREAKPOINTS; i++) {
 			if(cpu->PC == cpu->breakPoints[i]) {
 				encountered = 1;
+				i = MAX_BREAKPOINTS;
 			}
 		}
 		return encountered; 
 }
 
+/*
+	This function takes a passed breakPoint and searches the existing collection of breakpoints.
+	If a match is found the breakPoint is removed from the collection. If a match isn't found the
+	breakPoint is added. 
+*/
+int editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
+	int i;
+	int found = 0;
+	for(i = 0; i < MAX_BREAKPOINTS; i++) {
+		//User wants to remove this breakpoint
+		if (cpu->breakPoints[i] == breakPoint) {
+			//Set spot to available value, set found variable and exit the loop;
+			cpu->breakPoints[i] = AVAILABLE_BRKPT;
+			i = MAX_BREAKPOINTS;
+			found = 1;
+		}		
+	}
+	
+	//If this address doesn't exist find first available spot and add it to the collection of breakpoints
+	if(!found) {
+		for(i = 0; i < MAX_BREAKPOINTS; i++) {
+		//found the first open spot
+		if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
+			//Add in new break point and exit the loop;
+			cpu->breakPoints[i] = breakPoint;
+			i = MAX_BREAKPOINTS;
+		}		
+	}
+	}
+}
 /*
 	This is the main controller for the program. It takes a CPU struct and an int
 	which is being used as a boolean for displaying the screen.
@@ -242,6 +273,9 @@ int controller (CPU_p cpu, int isRunning) {
     state = FETCH;
 	int j;
 	
+	if(isRunning && encounteredBreakPont(cpu)) {
+		isRunning = 0;
+	}
     for (;;) {
         switch (state) {
             case FETCH: // microstates 18, 33, 35 in the book
@@ -445,7 +479,10 @@ void cpuInit(CPU_p cpu) {
 	cpu->N = 0;
 	cpu->Z = 0;
 	cpu->P = 0;
-
+	cpu->breakPoints[0] = AVAILABLE_BRKPT;
+	cpu->breakPoints[1] = AVAILABLE_BRKPT;
+	cpu->breakPoints[2] = AVAILABLE_BRKPT;
+	cpu->breakPoints[3] = AVAILABLE_BRKPT;
 }
 
 
