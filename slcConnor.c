@@ -8,9 +8,9 @@ int controller (CPU_p, int);
 
 int displayScreen (CPU_p, int);
 
-int dialog (CPU_p cpu);
+int dialog (CPU_p cpu, int);
 
-char getch ();
+//char getch ();
 
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
@@ -50,13 +50,13 @@ int trap(CPU_p cpu, int trap_vector) {
 			value = (int) getch();
 			break;
 		case OUT:
-			printf("%c", cpu->gotC);
+			printw("%c", cpu->gotC);
 			break;
 		case PUTS:
 			i = 0;
 			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			while ((temp)) {  
-			  printf("%c", (temp));
+			  printw("%c", (temp));
 			  i++;
 			  temp = memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			}
@@ -98,7 +98,7 @@ void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos)
 
 /*
 	This function simulates the GETC trap command in assembly.
-*/
+
 char getch() {
 	char buf = 0;         
 	struct termios old = {0};         
@@ -117,7 +117,7 @@ char getch() {
 	if (tcsetattr(0, TCSADRAIN, &old) < 0)                 
 		perror ("tcsetattr ~ICANON");         
 	return (buf); 
-}
+}*/
 
 
 /*
@@ -125,32 +125,37 @@ char getch() {
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem) {
+	int ch;
 	
-	printf("\n\n\n");
-	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
-	printf("\t\tRegisters \t\t    Memory\n");
+	//initscr();
+	printw("\n\n\n");
+	printw("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
+	printw("\t\tRegisters \t\t    Memory\n");
 	int i = START_MEM + mem;
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
 
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[2 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[2 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
 
 	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
-	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[12 + mem]);
-	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[13 + mem]);
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
-	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
-	printf("  Select: 1)Load, 3)Step, 5)Display Mem, 7)Run, 9)Exit\n");
-	return 0;
+	printw("\t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
+	printw("\t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
+	printw("\t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
+	printw("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[12 + mem]);
+	printw("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[13 + mem]);
+	printw("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
+	printw("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
+	printw("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
+	printw("  Select: 1)Load, 3)Step, 5)Display Mem, 7)Run, 9)Exit\n");
+	scanw("%d", &ch);
+	//refresh();
+	
+	return ch;
 }
 
 
@@ -158,19 +163,19 @@ int displayScreen(CPU_p cpu, int mem) {
 	This is the dialog function that provides the functionality to the choices shown in
 	the displayScreen.
 */
-int dialog(CPU_p cpu) {
-	int opNum = 0, isRunning = 0;
+int dialog(CPU_p cpu, int theCh) {
+	int opNum = theCh, isRunning = 0;
 	char fileName[MAX_FILE_NAME];
 	FILE* inputFile;
 		while (opNum != EXIT) {
-			scanf("%d", &opNum);
+			//scanf("%d", &opNum);
 			switch (opNum) {
 				case LOAD:
-					printf("File Name: ");
-					scanf("%s", &fileName);
+					printw("File Name: ");
+					scanw("%s", &fileName);
 					inputFile = fopen(fileName, "r");
 					if (inputFile == NULL) {
-						printf("DIDN'T OPEN");
+						printw("DIDN'T OPEN");
 						break;
 					}
 					int i = 0;
@@ -181,7 +186,7 @@ int dialog(CPU_p cpu) {
 						i++;
 					}
 					isLoaded = 1;
-					displayScreen(cpu, 0);
+					opNum = displayScreen(cpu, 0);
 					fclose(inputFile);
 					break;
 				case STEP:
@@ -189,30 +194,35 @@ int dialog(CPU_p cpu) {
 						controller(cpu, 0);
 						opNum = 0;
 					} else {
-						printf("No file loaded!");
+						printw("No file loaded!");
 					}
 					break;
 				case DISP_MEM:
-					printf("Position to move to? (in decimal): ");
+					printw("Position to move to? (in decimal): ");
 
-					scanf("%d", &memShift);
+					scanw("%d", &memShift);
 					if(memShift > MAX_MEMORY - DISP_BOUNDARY) {
-						printf("Error: out of memory");
+						printw("Error: out of memory");
 						memShift = 0;
 						break;
 					} else {
-						displayScreen(cpu, memShift);
+						opNum = displayScreen(cpu, memShift);
 					}
 					break;
 				case RUN:
 					controller(cpu, 1);
-					displayScreen(cpu, 0);
+					opNum = displayScreen(cpu, 0);
 					break;
 				case EXIT:
-					printf("Simulation Terminated.");
+					printw("Simulation Terminated.");
+					getch();
+					endwin();
 					break;
 			}
+			refresh();
 		}
+		
+	return 0;
 }
 
 
@@ -442,13 +452,14 @@ void cpuInit(CPU_p cpu) {
 	This is the main function that starts the program off.
 */
 int main(int argc, char* argv[]){
-
 	setvbuf(stdout, NULL, _IONBF, 0);
-	isLoaded = 0;
-	memShift = 0;
+	int isLoaded = 0;
+	int memShift = 0;
+	int ch = 0;
 	CPU_p cpu = malloc(sizeof(CPU_s));
 	cpuInit(cpu);
-	displayScreen(cpu, memShift);
-	dialog(cpu);
+	initscr();
+	ch = displayScreen(cpu, memShift);
+	dialog(cpu, ch);
 	return 0;
 }
