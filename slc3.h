@@ -38,7 +38,7 @@
 #define DISP_MEM 5
 #define STEP 3
 #define LOAD 1
-#define (UN)SET_BRKPTS 8
+#define SET_BRKPTS 8
 // etc.
 #define SEXT6_SIGN_EXTEND 0xFFC0
 #define SEXT6_MASK 0x003F
@@ -66,7 +66,7 @@
 
 #define MAX_FILE_NAME 100
 #define MAX_BREAKPOINTS 4
-#define AVAILABLE_BRKPT 99999
+#define AVAILABLE_BRKPT 9999
 #define SEXT9_SIGN_EXTEND 0xFE00
 #define HIGH_ORDER_BIT_VALUE9 0x0100
 
