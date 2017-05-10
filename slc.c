@@ -10,7 +10,7 @@ int displayScreen (CPU_p, int);
 
 int dialog (CPU_p cpu);
 
-char getch ();
+char getch();
 
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
