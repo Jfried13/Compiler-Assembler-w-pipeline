@@ -81,8 +81,8 @@ typedef struct CPU_s{
 	Register A, B, Res;
 	Register PC, ir;
 	Register MAR, MDR;
-	Register N, Z, P;
-	Register ImmFlag;
-	Register IMM5;
+	unsigned int N;
+	unsigned int P;
+	unsigned int Z;
 	char gotC;
 } CPU_s, *CPU_p;
