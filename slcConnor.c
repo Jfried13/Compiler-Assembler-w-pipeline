@@ -125,7 +125,8 @@ char getch() {
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem) {
-  printf("\n\n\n");
+	
+	printf("\n\n\n");
 	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
 	printf("\t\tRegisters \t\t    Memory\n");
 	int i = START_MEM + mem;
