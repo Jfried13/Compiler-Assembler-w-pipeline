@@ -65,7 +65,7 @@
 #define TRAP_VECTOR_MASK 0x00FF
 
 #define MAX_FILE_NAME 100
-
+#define MAX_BREAKPOINTS 4
 #define SEXT9_SIGN_EXTEND 0xFE00
 #define HIGH_ORDER_BIT_VALUE9 0x0100
 
@@ -86,4 +86,5 @@ typedef struct CPU_s{
 	unsigned int P;
 	unsigned int Z;
 	char gotC;
+	unsigned short breakPoints[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;

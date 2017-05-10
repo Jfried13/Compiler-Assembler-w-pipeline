@@ -10,7 +10,7 @@ int displayScreen (CPU_p, int);
 
 int dialog (CPU_p cpu);
 
-//char getch ();
+char getch ();
 
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
@@ -98,7 +98,7 @@ void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos)
 
 /*
 	This function simulates the GETC trap command in assembly.
-
+*/
 char getch() {
 	char buf = 0;         
 	struct termios old = {0};         
@@ -117,7 +117,7 @@ char getch() {
 	if (tcsetattr(0, TCSADRAIN, &old) < 0)                 
 		perror ("tcsetattr ~ICANON");         
 	return (buf); 
-}*/
+}
 
 
 /*
@@ -214,7 +214,19 @@ int dialog(CPU_p cpu) {
 		}
 }
 
-
+/*
+	This method compares the current value of PC against any breakpoints entered by the user. 
+*/
+int encounteredBreakPont(CPU_p cpu) {
+		int encountered = 0;
+		int i;
+		for (i = 0; i < MAX_BREAKPOINTS; i++) {
+			if(cpu->PC == cpu->breakPoints[i]) {
+				encountered = 1;
+			}
+		}
+		return encountered; 
+}
 
 /*
 	This is the main controller for the program. It takes a CPU struct and an int
