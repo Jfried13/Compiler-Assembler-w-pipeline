@@ -485,6 +485,41 @@ void cpuInit(CPU_p cpu) {
 	cpu->breakPoints[3] = AVAILABLE_BRKPT;
 }
 
+//returns 1 if true 0 if false
+int checkIfFileExists(char* fileToCheckIfExists) {
+	FILE* filePtr;
+	if(filePtr = fopen(fileName, r+)) {
+		fclose(filePtr);
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+//need to #define TRAP25 61477;
+void writeMemory(char * fileToWriteToName) {
+	FILE * filePtr;
+	int TRAP25 = 61477; 
+	//the file exists so promt the user to see if they 
+	//are ok with overwritting the preexisting file
+	if(checkIfFileExists(fileToWriteToName)) {
+		int beginning = 0;
+		filePtr = fopen(fileToWriteToName, "w");
+		unsigned short instruction = memory[beginning];
+		while(instruction != TRAP25) {
+			fprintf(filePtr, "%04x", instruction);
+			beginning++;
+			instruction = memory[beginning];
+		}
+
+	//the file doesn't exist so create the new file and write to it
+	} else {
+		FILE * filePtr;
+		fopen(fileToWriteToName, "w");
+
+	}
+}
+
 
 /*
 	This is the main function that starts the program off.
