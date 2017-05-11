@@ -488,11 +488,13 @@ void cpuInit(CPU_p cpu) {
 //returns 1 if true 0 if false
 int checkIfFileExists(char* fileToCheckIfExists) {
 	FILE* filePtr;
-	if(filePtr = fopen(fileName, r+)) {
+	filePtr = fopen(fileName, "r+");
+	if(filePtr != NULL) {
 		fclose(filePtr);
 		return 1;
 	} else {
 		return 0;
+		fclose(filePtr);
 	}
 }
 
@@ -501,7 +503,8 @@ void writeMemory(char * fileToWriteToName) {
 	FILE * filePtr;
 	int TRAP25 = 61477; 
 	//the file exists so promt the user to see if they 
-	//are ok with overwritting the preexisting file
+	//are ok with overwritting the preexisting file right here
+	//include if/else statement to check user decision for overwriting
 	if(checkIfFileExists(fileToWriteToName)) {
 		int beginning = 0;
 		filePtr = fopen(fileToWriteToName, "w");
@@ -516,6 +519,11 @@ void writeMemory(char * fileToWriteToName) {
 	} else {
 		FILE * filePtr;
 		fopen(fileToWriteToName, "w");
+		while(instruction != TRAP25) {
+			fprintf(filePtr, "%04x", instruction);
+			beginning++;
+			instruction = memory[beginning];
+		}
 
 	}
 }
