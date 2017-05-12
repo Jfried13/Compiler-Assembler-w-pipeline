@@ -101,7 +101,6 @@ void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos)
 int displayScreen(CPU_p cpu, int mem) {
 
     clear();
-    refresh();
     printw("\n\n\n");
 	printw("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
 	printw("\t\tRegisters \t\t    Memory\n");
@@ -177,7 +176,7 @@ int dialog(CPU_p cpu) {
 				case DISP_MEM:
 					printw("Position to move to? (in decimal): ");
 
-					scanf("%d", &memShift);
+					scanw("%d", &memShift);
 					if(memShift > MAX_MEMORY - DISP_BOUNDARY) {
 						printw("Error: out of memory");
 						memShift = 0;
