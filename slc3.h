@@ -37,6 +37,7 @@
 #define RUN 7
 #define DISP_MEM 5
 #define STEP 3
+#define SAVE 2
 #define LOAD 1
 #define SET_BRKPTS 8
 // etc.
