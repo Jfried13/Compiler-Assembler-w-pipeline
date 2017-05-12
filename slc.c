@@ -2,7 +2,6 @@
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include <curses.h>
 #include "slc3.h"
 
 int controller (CPU_p, int);
