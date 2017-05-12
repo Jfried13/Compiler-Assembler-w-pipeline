@@ -2,6 +2,7 @@
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
+#include <curses.h>
 #include "slc3.h"
 
 int controller (CPU_p, int);
@@ -43,27 +44,28 @@ int trap(CPU_p cpu, int trap_vector) {
 	int i = 0;
 	char temp;
 	switch (trap_vector) {
-		case GETC:
-			value = (int) getch();
-			break;
-		case OUT:
-			//printw("%d", cpu->gotC);
-			break;
-		case PUTS:
-			i = 0;
-			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
-			while ((temp)) {  
-			  printw("%c", (temp));
-			  i++;
-			  temp = (char) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
-			}
-			break;
-		case HALT:
-			value = 1;
-			break;
-        default:break;
+        case GETC:
+            value = (int) getch();
+            break;
+        case OUT:
+            //printw("%d", cpu->gotC);
+            break;
+        case PUTS:
+            i = 0;
+            temp = (char) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+            while ((temp)) {
+                printw("%c", (temp));
+                i++;
+                temp = (char) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+            }
+            getch();
+            break;
+        case HALT:
+            value = 1;
+            break;
+        default:
+            break;
     }
-	
 	return value;
 }
 
@@ -221,7 +223,7 @@ int controller (CPU_p cpu, int isRunning) {
             	 cpu->PC++;	// increment PC
             	 cpu->MDR = memory[cpu->MAR];
             	 cpu->ir = cpu->MDR;
-            	 //cc = 0;
+            	 cc = 0;
                state = DECODE;
             case DECODE:
 				opcode = cpu->ir >> OPCODE_SHIFT;
@@ -267,7 +269,6 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->A = cpu->r[Rs1];
 							cpu->B = cpu->r[Rs2];
 						}
-
 						break;
 					case AND:
 					if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
