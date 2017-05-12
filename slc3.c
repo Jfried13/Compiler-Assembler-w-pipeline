@@ -2,7 +2,7 @@
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include "slc3.h"
+#include "tempslc3.h"
 
 int controller (CPU_p, int);
 
@@ -150,7 +150,7 @@ int displayScreen(CPU_p cpu, int mem) {
 	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
 	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
 	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
-	printf("  Select: 1)Load, 2)Save, 3)Step, 5)Display Mem, 7)Run, 9)Exit\n");
+	printf("  Select: 1)Load, 2)Save, 3)Step, 5)Display Mem, 6)Edit, 7)Run, 9)Exit\n");
 	return 0;
 }
 
@@ -161,6 +161,11 @@ int displayScreen(CPU_p cpu, int mem) {
 */
 int dialog(CPU_p cpu) {
 	int opNum = 0, isRunning = 0;
+	//long newValue;
+	unsigned int placeInMemory;
+	unsigned short newValue; 
+	char newMemoryValue[4];
+	char * charPtr;
 	char fileName[MAX_FILE_NAME];
 	FILE* inputFile;
 		while (opNum != EXIT) {
@@ -210,6 +215,19 @@ int dialog(CPU_p cpu) {
 					} else {
 						displayScreen(cpu, memShift);
 					}
+					break;
+				case EDIT:
+					printf("What memory address would you like to edit: ");
+					scanf("%04x", &placeInMemory);
+					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - START_MEM + 1]);
+					printf("What would you like the new value in location %04x to be: ", placeInMemory);
+					scanf("%s", &newMemoryValue);
+					printf("%s\n", newMemoryValue);
+					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
+					printf("the new value = %ld\n", newValue);
+					memory[placeInMemory - START_MEM + 1] = newValue;
+
+					displayScreen(cpu, 0);
 					break;
 				case RUN:
 					controller(cpu, 1);
