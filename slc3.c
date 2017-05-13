@@ -205,15 +205,14 @@ int dialog(CPU_p cpu) {
 					}
 					break;
 				case DISP_MEM:
-					printf("Position to move to? (in decimal): ");
-
-					scanf("%d", &memShift);
-					if(memShift > MAX_MEMORY - DISP_BOUNDARY) {
+					printf("Position to move to? (in hex): ");
+					scanf("%4x", &memShift);
+					if(memShift - START_MEM > MAX_MEMORY - DISP_BOUNDARY) {
 						printf("Error: out of memory");
 						memShift = 0;
 						break;
 					} else {
-						displayScreen(cpu, memShift);
+						displayScreen(cpu, memShift - START_MEM);
 					}
 					break;
 				case EDIT:
@@ -224,10 +223,8 @@ int dialog(CPU_p cpu) {
 					scanf("%s", &newMemoryValue);
 					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
-					printf("the new value = %ld\n", newValue);
 					memory[placeInMemory - START_MEM + 1] = newValue;
-
-					displayScreen(cpu, 0);
+					displayScreen(cpu, placeInMemory - START_MEM - 7);
 					break;
 				case RUN:
 					controller(cpu, 1);
