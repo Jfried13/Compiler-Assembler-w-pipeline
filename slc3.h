@@ -89,3 +89,5 @@ typedef struct CPU_s{
 	char gotC;
 	unsigned short breakPoints[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;
+
+unsigned short memory[MAX_MEMORY];

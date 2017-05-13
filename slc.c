@@ -14,8 +14,8 @@ int dialog (CPU_p cpu);
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
 
-// you can define a simple memory module here for this program
-unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
+// you can define a simple memory module here for this program//
+//unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
 
@@ -129,7 +129,7 @@ int displayScreen(CPU_p cpu, int mem) {
 	printw("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
 	printw("  Select: 1)Load, 3)Step, 5)Display Mem, 7)Run, 9)Exit\n");
 
-    //dialog(cpu);
+    dialog(cpu);
     refresh();
 	return 0;
 }
