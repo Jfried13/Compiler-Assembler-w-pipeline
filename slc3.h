@@ -76,6 +76,7 @@
 
 #define MAX_MEMORY 500
 
+extern unsigned short memory[MAX_MEMORY];
 
 typedef unsigned short Register;
 //cpu a b res mar mdr
@@ -92,3 +93,5 @@ typedef struct CPU_s{
 	unsigned short breakPoints[MAX_BREAKPOINTS];
 	
 } CPU_s, *CPU_p;
+
+unsigned short memory[MAX_MEMORY];

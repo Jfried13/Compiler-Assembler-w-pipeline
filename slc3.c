@@ -18,7 +18,7 @@ void writeMemory(char * fileToWriteToName);
 
 
 // you can define a simple memory module here for this program
-unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
+//unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
 
