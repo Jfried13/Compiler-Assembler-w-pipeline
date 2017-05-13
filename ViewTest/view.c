@@ -1,7 +1,7 @@
 #include <ncurses.h>
 #include <string.h>
 #include <stdio.h>
-#include "slc3.h"
+#include "../slc3.h"
 
 // Created by Daniel Ivanov on 5/12/2017.
 // this class if for the NCurses Gui.
