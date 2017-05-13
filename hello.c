@@ -4,7 +4,7 @@
 
 int main () {
 	int ch;
-
+	
 	initscr();			/* Start curses mode 		*/
 	raw();				/* Line buffering disabled	*/
 	keypad(stdscr, TRUE);		/* We get F1, F2 etc..		*/
@@ -25,6 +25,7 @@ int main () {
 		printw("%c", ch);
 		attroff(A_BOLD);
 	}
+	printw("sizeof unsigned long %d", sizeof(unsigned short));
 	refresh();			/* Print it on to the real screen */
     	getch();			/* Wait for user input */
 	endwin();			/* End curses mode		  */
