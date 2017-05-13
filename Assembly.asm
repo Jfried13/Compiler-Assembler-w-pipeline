@@ -79,7 +79,8 @@ JSRR R7
 			PUTS		 	 ; Printing Hello
 			GETC
 			LEA R0, NAME		 ;
-			PUTS			 ; Printing Encrypted Name
+			PUTS			 ; Printing Encrypted Name9
+			GETC
 
 		HALT
 KEY		.FILL #-3
