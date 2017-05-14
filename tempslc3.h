@@ -7,11 +7,10 @@
 
 
 #define FETCH 0
-#define DECODE 1
-#define EVAL_ADDR 2
-#define FETCH_OP 4
-#define EXECUTE 5
-#define STORE 6
+#define IDRR 1
+#define EXECUTE 2
+#define MEM 3
+#define STORE 4
 
 // instructions
 #define ADD 1
@@ -80,6 +79,13 @@
 typedef unsigned short Register;
 //cpu a b res mar mdr
 // lc3.c
+
+typedef struct BUFFER {
+	unsigned int PC;
+	unsigned short Rd;
+	unsigned int 
+} BUFFER, *BUFFER_p;
+
 typedef struct CPU_s{
 	Register r[8];
 	Register A, B, Res;
@@ -90,4 +96,5 @@ typedef struct CPU_s{
 	unsigned int Z;
 	char gotC;
 	unsigned short breakPoints[MAX_BREAKPOINTS];
+	unsigned long buffers[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;
