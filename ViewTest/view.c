@@ -13,7 +13,13 @@ WINDOW *RegisterWindow;
 WINDOW *MemoryWindow;
 WINDOW *CPUWindow;
 WINDOW *MainInput;
+WINDOW *Pipeline;
 
+#define PHEIGHT 18
+#define PWIDTH 48
+
+#define INPUTHEIGHT 4
+#define INPUTWIDTH 78
 
 #define MAINHEIGHT 25
 #define MAINWIDTH 80
@@ -28,7 +34,7 @@ WINDOW *MainInput;
 #define MemWidth 15
 
 #define CPUHeight 8
-#define CPUWidth 21
+#define CPUWidth 13
 
 void displayTitle() {
     mvwprintw(MainWindow, 0, 28, "Welcome to LC3 Simulator");
@@ -51,7 +57,7 @@ void IOwindow () {
 }
 
 void RegWindow(CPU_p cpu){
-    //box(RegisterWindow, 0, 0);
+    box(RegisterWindow, 0, 0);
     mvwprintw(RegisterWindow, 0, 1, "Registers:");
     for(int i = 0; i < 8; i++) {
         mvwprintw(RegisterWindow, 1 + i, 1, "R%d: x%04X", i, cpu->r[i]);
@@ -60,7 +66,7 @@ void RegWindow(CPU_p cpu){
 }
 
 void MemWindow(memShift) {
-    //box(MemoryWindow, 0, 0);
+    box(MemoryWindow, 0, 0);
     mvwprintw(MemoryWindow, 0, 4, "Memory:");
     for (int i = 0; i < 16; i++) {
         mvwprintw(MemoryWindow, 1 + i, 1, "x%X: x%04X", START_MEM + i + memShift, memory[i + memShift]);
@@ -69,7 +75,7 @@ void MemWindow(memShift) {
 }
 
 void CPUwindow(CPU_p cpu) {
-    //box(CPUWindow, 0, 0);
+    box(CPUWindow, 0, 0);
     mvwprintw(CPUWindow, 0, 1, "CPU Data:");
     //mvwprintw(CPUWindow, 1, 1, "PC:x%04X   IR:x%04X", cpu->PC, cpu->ir);
     mvwprintw(CPUWindow, 1,1, "PC:x%04X", cpu->PC);
@@ -91,7 +97,7 @@ void CPUwindow(CPU_p cpu) {
 
 void MainInputWindow() {
     box(MainInput, 0, 0);
-    mvwprintw(MainInput, 1, 1, "  Select: 1)Load, 3)Step, 5)Display Mem, 7)Run, 9)Exit");
+    mvwprintw(MainInput, 1, 1, "  Select: 1)Load, 3)Step, 5)Display Mem, 6)Switch View, 7)Run, 9)Exit");
     mvwprintw(MainInput, 2, 1, "  Input: ");
     wrefresh(MainInput);
     int value = getch();
@@ -99,14 +105,24 @@ void MainInputWindow() {
     wrefresh(MainInput);
 }
 
+void PiplineWindow() {
+    box(Pipeline, 0, 0);
+    mvwprintw(Pipeline, 0, 15, "Cache/PipeLine Info:");
+    wrefresh(Pipeline);
+    wrefresh(Pipeline);
+}
+
+
 void display(CPU_p cpu, int mem) {
     refresh();
     mainWindow();
     RegWindow(cpu);
     MemWindow(mem);
     CPUwindow(cpu);
+    PiplineWindow();
     IOwindow();
     MainInputWindow();
+    refresh();
     getch();
 }
 
@@ -117,7 +133,8 @@ void initializeWindow() {
     RegisterWindow = newwin(RegHeight, RegWidth, 1, 1);
     MemoryWindow = newwin(MemHeight, MemWidth, 1, 64);
     CPUWindow = newwin(CPUHeight, CPUWidth, 11, 1);
-    MainInput = newwin(4, 78, 20, 1);
+    MainInput = newwin(INPUTHEIGHT, INPUTWIDTH, 20, 1);
+    Pipeline = newwin(PHEIGHT,PWIDTH, 1, 15);
 }
 
 
