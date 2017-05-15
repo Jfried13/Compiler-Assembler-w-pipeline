@@ -27,7 +27,7 @@ WINDOW *MainInput;
 #define MemHeight 17
 #define MemWidth 15
 
-#define CPUHeight 6
+#define CPUHeight 8
 #define CPUWidth 21
 
 void displayTitle() {
@@ -70,11 +70,22 @@ void MemWindow(memShift) {
 
 void CPUwindow(CPU_p cpu) {
     //box(CPUWindow, 0, 0);
-    mvwprintw(CPUWindow, 0, 5, "CPU Data:");
-    mvwprintw(CPUWindow, 1, 1, "PC:x%04X   IR:x%04X", cpu->PC, cpu->ir);
-    mvwprintw(CPUWindow, 2, 1, "A: x%04X   B: x%04X", cpu->A, cpu->B);
-    mvwprintw(CPUWindow, 3, 1, "MAR:x%04X  MDR:x%04X", cpu->MAR, cpu->MDR);
-    mvwprintw(CPUWindow, 4, 1, "N:%d   Z:%d   P:%d", cpu->N, cpu->Z, cpu->P);
+    mvwprintw(CPUWindow, 0, 1, "CPU Data:");
+    //mvwprintw(CPUWindow, 1, 1, "PC:x%04X   IR:x%04X", cpu->PC, cpu->ir);
+    mvwprintw(CPUWindow, 1,1, "PC:x%04X", cpu->PC);
+    mvwprintw(CPUWindow, 2,1, "IR:x%04X", cpu->ir);
+
+    mvwprintw(CPUWindow, 3,1, "A: x%04X", cpu->A);
+    mvwprintw(CPUWindow, 4,1, "B: x%04X", cpu->B);
+    //mvwprintw(CPUWindow, 2, 1, "A: x%04X   B: x%04X", cpu->A, cpu->B);
+
+    //mvwprintw(CPUWindow, 3, 1, "MAR:x%04X  MDR:x%04X", cpu->MAR, cpu->MDR);
+    mvwprintw(CPUWindow, 5,1, "MAR:x%04X", cpu->MAR);
+    mvwprintw(CPUWindow, 6,1, "MDR:x%04X", cpu->MDR);
+
+    mvwprintw(CPUWindow, 7,1, "N%d Z:%d P:%d", cpu->N, cpu->Z, cpu->P);
+
+    //mvwprintw(CPUWindow, 4, 1, "N:%d   Z:%d   P:%d", cpu->N, cpu->Z, cpu->P);
     wrefresh(CPUWindow);
 }
 
