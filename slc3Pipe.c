@@ -18,7 +18,7 @@ void writeMemory(char * fileToWriteToName);
 
 
 // you can define a simple memory module here for this program
-//unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
+unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
 
@@ -129,32 +129,28 @@ char getch() {
 int displayScreen(CPU_p cpu, int mem) {
   printf("\n\n\n");
 	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
-	printf("\t\tRegisters \t\t    Memory\n");
+	printf("\tRegisters \t\t\t\t    Memory\n");
 	int i = START_MEM + mem;
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
-
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[2 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
+	
+	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
+	printf("\tR%d: x%04X    FBUFF  PC: x%4X   IR: x%4X \t\t\t\t x%X: x%04X\n", 1, cpu->r[1], cpu->buffers[0] i+1, memory[2 + mem]);
+	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
+	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
+	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
+	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
+	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
+	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
 
 	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
-	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[12 + mem]);
-	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[13 + mem]);
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
-	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
-<<<<<<< HEAD
-	printf("  Select: 1)Load,2)Save, 3)Step, 5)Display Mem 6)Edit, 7)Run, 9)Exit\n");
-=======
+	printf("          \t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
+	printf("          \t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
+	printf("          \t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
+	printf("          \t\t\t\t\t x%X: x%04X\n", i+3, memory[12 + mem]);
+	printf("          \t\t\t\t\t x%X: x%04X\n", i+4, memory[13 + mem]);
+	printf("          \t\t\t\t\t x%X: x%04X\n", i+5, memory[14 + mem]);
+	printf("          \t\t\t\t\t x%X: x%04X\n", i+6, memory[15 + mem]);
+	printf("          \t\t\t\t\t x%X: x%04X\n", i+7, memory[16 + mem]);
 	printf("  Select: 1)Load, 2)Save, 3)Step, 5)Display Mem, 6)Edit, 7)Run, 9)Exit\n");
->>>>>>> master
 	return 0;
 }
 
@@ -306,24 +302,27 @@ int controller (CPU_p cpu, int isRunning) {
     for (;;) {
         switch (state) {
             case FETCH: // microstates 18, 33, 35 in the book
-            	 cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
-            	 cpu->PC++;	// increment PC
-            	 cpu->MDR = memory[cpu->MAR];
-            	 cpu->ir = cpu->MDR;
-            	 cc = 0;
-               state = DECODE;
-            case DECODE:
-				opcode = cpu->ir >> OPCODE_SHIFT;
-				Rd = cpu->ir & DR_MASK;
+				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
+				cpu->PC++;	// increment PC
+				cpu->MDR = memory[cpu->MAR];
+				cpu->ir = cpu->MDR;
+				cc = 0;
+				cpu->buffers[0]->PC = cpu->PC;		//IF Buffer
+				cpu->buffers[0]->IR = cpu->IR;
+                state = IDRR;
+            case IDRR:
+				opcode = cpu->buffers[0]->IR >> OPCODE_SHIFT;			//Decode Stage
+				Rd = cpu->buffers[0]->IR & DR_MASK;
 				Rd = (short)Rd >> DR_SHIFT;
-				Rs1 = cpu->ir & SR_MASK;
+				Rs1 = cpu->buffers[0]->IR & SR_MASK;
 				Rs1 = (short)Rs1 >> SR_SHIFT;
 				Rs2 = cpu->ir & SR2_MASK;
-				immed_offset = cpu->ir & SR_MASK;
-				BaseR = (cpu->ir & BASE_MASK) >> SR_SHIFT;
-                state = EVAL_ADDR;
-            case EVAL_ADDR: // Look at the LD instruction to see microstate 2 example
-                switch (opcode) {
+				immed_offset = cpu->buffers[0]->IR & SR_MASK;
+				BaseR = (cpu->buffers[0]->IR & BASE_MASK) >> SR_SHIFT;
+				
+				//IDRR Buffer
+				
+                switch (opcode) {							//Evaluate Address Stage
 					case LDR:
 						cpu->MAR = (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL;
 						break;
@@ -340,9 +339,8 @@ int controller (CPU_p cpu, int isRunning) {
 						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
 						break;
                 }
-                state = FETCH_OP;
-            case FETCH_OP: // Look at ST. Microstate 23 example of getting a value out of a register
-                switch (opcode) {
+
+                switch (opcode) {							//Fetch Operand Stage
 					case LDR:
 					case LD:
 					 cpu->MDR = memory[cpu->MAR];
@@ -446,6 +444,7 @@ int controller (CPU_p cpu, int isRunning) {
 					break;
                 }
                 state = STORE;
+			//add case of MEM here
             case STORE: // Look at ST. Microstate 16 is the store to memory
                 switch (opcode) {
 					case ADD:

@@ -10,8 +10,6 @@ int displayScreen (CPU_p, int);
 
 int dialog (CPU_p cpu);
 
-char getch ();
-
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
 
@@ -19,7 +17,6 @@ void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
-
 
 /*
 	This function is the offset6 sign extender.
@@ -47,24 +44,27 @@ int trap(CPU_p cpu, int trap_vector) {
 	char temp;
 	switch (trap_vector) {
 		case GETC:
+			//printw("in GETC ");
 			value = (int) getch();
 			break;
 		case OUT:
-			printf("%c", cpu->gotC);
+			//printw("%d", cpu->gotC);
 			break;
 		case PUTS:
+			//printw("in PUTS\n");
 			i = 0;
 			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			while ((temp)) {  
-			  printf("%c", (temp));
-			  i++;
-			  temp = memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+				printw("%c", (temp));
+				i++;
+				temp = (char) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			}
 			break;
 		case HALT:
 			value = 1;
 			break;
-	}
+        default:break;
+    }
 	
 	return value;
 }
@@ -97,59 +97,40 @@ void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos)
 
 
 /*
-	This function simulates the GETC trap command in assembly.
-*/
-char getch() {
-	char buf = 0;         
-	struct termios old = {0};         
-	if (tcgetattr(0, &old) < 0)                 
-		perror("tcsetattr()");         
-	old.c_lflag &= ~ICANON;         
-	old.c_lflag &= ~ECHO;         
-	old.c_cc[VMIN] = 1;         
-	old.c_cc[VTIME] = 0;         
-	if (tcsetattr(0, TCSANOW, &old) < 0)                 
-		perror("tcsetattr ICANON");        
-	if (read(0, &buf, 1) < 0)                 
-		perror ("read()");         
-	old.c_lflag |= ICANON;         
-	old.c_lflag |= ECHO;         
-	if (tcsetattr(0, TCSADRAIN, &old) < 0)                 
-		perror ("tcsetattr ~ICANON");         
-	return (buf); 
-}
-
-
-/*
 	This function displays the debug screen with LOAD, STEP, DISPLAY MEM, RUN, or EXIT
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem) {
-	
-	printf("\n\n\n");
-	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
-	printf("\t\tRegisters \t\t    Memory\n");
-	int i = START_MEM + mem;
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
 
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[2 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
+    clear();
+
+    printw("\n\n\n");
+	printw("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
+	printw("\t\tRegisters \t\t    Memory\n");
+	int i = START_MEM + mem;
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
+
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[2 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
+	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
 
 	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
-	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[12 + mem]);
-	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[13 + mem]);
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
-	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
-	printf("  Select: 1)Load, 3)Step, 5)Display Mem, 7)Run, 9)Exit\n");
+	printw("\t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
+	printw("\t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
+	printw("\t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
+	printw("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[12 + mem]);
+	printw("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[13 + mem]);
+	printw("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
+	printw("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
+	printw("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
+	printw("  Select: 1)Load, 3)Step, 5)Display Mem, 7)Run, 9)Exit\n");
+
+    //dialog(cpu);
+    refresh();
 	return 0;
 }
 
@@ -159,18 +140,20 @@ int displayScreen(CPU_p cpu, int mem) {
 	the displayScreen.
 */
 int dialog(CPU_p cpu) {
-	int opNum = 0, isRunning = 0;
+    int opNum = 0;
 	char fileName[MAX_FILE_NAME];
 	FILE* inputFile;
 		while (opNum != EXIT) {
-			scanf("%d", &opNum);
+            printw("\nInput: ");
+            scanw("%d", &opNum);
+            printw("\n=============================================================\n");
 			switch (opNum) {
 				case LOAD:
-					printf("File Name: ");
-					scanf("%s", &fileName);
+					printw("File Name: ");
+					scanw("%s", &fileName);
 					inputFile = fopen(fileName, "r");
 					if (inputFile == NULL) {
-						printf("DIDN'T OPEN");
+						printw("DIDN'T OPEN");
 						break;
 					}
 					int i = 0;
@@ -189,15 +172,15 @@ int dialog(CPU_p cpu) {
 						controller(cpu, 0);
 						opNum = 0;
 					} else {
-						printf("No file loaded!");
+						printw("No file loaded!");
 					}
 					break;
 				case DISP_MEM:
-					printf("Position to move to? (in decimal): ");
+					printw("Position to move to? (in decimal): ");
 
-					scanf("%d", &memShift);
+					scanw("%d", &memShift);
 					if(memShift > MAX_MEMORY - DISP_BOUNDARY) {
-						printf("Error: out of memory");
+						printw("Error: out of memory");
 						memShift = 0;
 						break;
 					} else {
@@ -209,10 +192,13 @@ int dialog(CPU_p cpu) {
 					displayScreen(cpu, 0);
 					break;
 				case EXIT:
-					printf("Simulation Terminated.");
+					printw("Simulation Terminated.");
+                    endwin();
 					break;
-			}
+                default:break;
+            }
 		}
+    return 0;
 }
 
 
@@ -224,49 +210,48 @@ int dialog(CPU_p cpu) {
 int controller (CPU_p cpu, int isRunning) {
 	unsigned int state;
 	short cc;
-	unsigned int opcode, Rd, Rs1, Rs2, immed_offset, BaseR;	// fields for the IR
+	unsigned int opcode = 0, Rd = 0, Rs1 = 0, Rs2 = 0, immed_offset = 0, BaseR = 0;	// fields for the IR
 	char charToPrint = ' ';
-	char *temp;
 	int value = 0;
     state = FETCH;
-	int j;
 	
     for (;;) {
         switch (state) {
             case FETCH: // microstates 18, 33, 35 in the book
-            	 cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
+            	 cpu->MAR = (Register) (cpu->PC - CONVERT_TO_DECIMAL);
             	 cpu->PC++;	// increment PC
             	 cpu->MDR = memory[cpu->MAR];
             	 cpu->ir = cpu->MDR;
-            	 cc = 0;
+            	 //cc = 0;
                state = DECODE;
             case DECODE:
 				opcode = cpu->ir >> OPCODE_SHIFT;
-				Rd = cpu->ir & DR_MASK;
-				Rd = (short)Rd >> DR_SHIFT;
-				Rs1 = cpu->ir & SR_MASK;
-				Rs1 = (short)Rs1 >> SR_SHIFT;
-				Rs2 = cpu->ir & SR2_MASK;
-				immed_offset = cpu->ir & SR_MASK;
-				BaseR = (cpu->ir & BASE_MASK) >> SR_SHIFT;
+				Rd = (unsigned int) (cpu->ir & DR_MASK);
+				Rd = (unsigned int) ((short)Rd >> DR_SHIFT);
+				Rs1 = (unsigned int) (cpu->ir & SR_MASK);
+				Rs1 = (unsigned int) ((short)Rs1 >> SR_SHIFT);
+				Rs2 = (unsigned int) (cpu->ir & SR2_MASK);
+				immed_offset = (unsigned int) (cpu->ir & SR_MASK);
+				BaseR = (unsigned int) ((cpu->ir & BASE_MASK) >> SR_SHIFT);
                 state = EVAL_ADDR;
             case EVAL_ADDR: // Look at the LD instruction to see microstate 2 example
                 switch (opcode) {
 					case LDR:
-						cpu->MAR = (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL;
+						cpu->MAR = (Register) ((cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL);
 						break;
 					case LD:
-						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						cpu->MAR = (Register) ((cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset));
 						break;
 					case ST:
-						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						cpu->MAR = (Register) ((cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset));
 						break;
 					case STR:
-						cpu->MAR = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset);
+						cpu->MAR = (Register) ((cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset));
 						break;
 					case TRAP:
-						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
+						cpu->MAR = (Register) (immed_offset & TRAP_VECTOR_MASK);
 						break;
+                    default:break;
                 }
                 state = FETCH_OP;
             case FETCH_OP: // Look at ST. Microstate 23 example of getting a value out of a register
@@ -278,7 +263,7 @@ int controller (CPU_p cpu, int isRunning) {
 					case ADD:
 						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
 							cpu->A = cpu->r[Rs1];
-							cpu->B = (immed_offset & SEXT5_MASK);
+							cpu->B = (Register) (immed_offset & SEXT5_MASK);
 						} else{
 							cpu->A = cpu->r[Rs1];
 							cpu->B = cpu->r[Rs2];
@@ -288,7 +273,7 @@ int controller (CPU_p cpu, int isRunning) {
 					case AND:
 					if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
 							cpu->A = cpu->r[Rs1];
-							cpu->B = (immed_offset & SEXT5_MASK);
+							cpu->B = (Register) (immed_offset & SEXT5_MASK);
 						} else{
 							cpu->A = cpu->r[Rs1];
 							cpu->B = cpu->r[Rs2];
@@ -304,17 +289,18 @@ int controller (CPU_p cpu, int isRunning) {
 					case TRAP:
 						cpu->MDR = memory[cpu->MAR];
 						cpu->r[7] = cpu->PC;
+                    default:break;
                 }
                 state = EXECUTE;
             case EXECUTE: // Note that ST does not have an execute microstate
                 switch (opcode) {
 					case ADD:
 						if (cpu->A < 0) {
-							cpu->Res = -(cpu->A) + (cpu->B);
+							cpu->Res = (Register) (-(cpu->A) + (cpu->B));
 						} else if (cpu->B < 0) {
 							cpu->Res = (cpu->A) -(cpu->B);
 						} else if ((cpu->A < 0) & (cpu->B < 0)) {
-							cpu->Res = -(cpu->A) -(cpu->B);
+							cpu->Res = (Register) (-(cpu->A) - (cpu->B));
 						} else {
 							cpu->Res = (cpu->A) + (cpu->B);
 						}
@@ -345,9 +331,9 @@ int controller (CPU_p cpu, int isRunning) {
 						if (value == 1) {
 							return 0;
 						} else if (value > 1) {
-							cpu->r[0] = (char) value;
+							cpu->r[0] = (Register) (char) value;
 							cpu->gotC = (char) value;
-							cpu->r[Rd] = value;
+							cpu->r[Rd] = (Register) value;
 						}
 						break;
 					case JSRR:
@@ -360,18 +346,19 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case BR:
 						if (cpu->N && (Rd & 4)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+							cpu->PC = (Register) (cpu->PC + sext9(immed_offset));
 							break;
 						}
 						if (cpu->Z && (Rd & 2)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+							cpu->PC = (Register) (cpu->PC + sext9(immed_offset));
 							break;
 						}
 						if (cpu->P && (Rd & 1)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+							cpu->PC = (Register) (cpu->PC + sext9(immed_offset));
 							break;
 						}
 					break;
+                    default:break;
                 }
                 state = STORE;
             case STORE: // Look at ST. Microstate 16 is the store to memory
@@ -393,7 +380,7 @@ int controller (CPU_p cpu, int isRunning) {
 						chooseFlag (cpu, cc);
 						break;
 					case LEA:
-						cpu->r[Rd] = cpu->PC + sext9(immed_offset);
+						cpu->r[Rd] = (Register) (cpu->PC + sext9(immed_offset));
 						cc = cpu->r[Rd];
 						chooseFlag (cpu, cc);
 						break;
@@ -401,13 +388,15 @@ int controller (CPU_p cpu, int isRunning) {
 					case ST:
 						memory[cpu->MAR] = cpu->MDR;
 						break;
-	                }
+                    default:break;
+                }
                 state = FETCH;
                 break;
+            default:break;
         }
 		if (!isRunning) {
 			displayScreen(cpu, 0);
-			scanf("%c", &charToPrint);
+			scanw("%c", &charToPrint);
 		}
     }
 }
@@ -442,7 +431,7 @@ void cpuInit(CPU_p cpu) {
 	This is the main function that starts the program off.
 */
 int main(int argc, char* argv[]){
-
+    initscr();
 	setvbuf(stdout, NULL, _IONBF, 0);
 	isLoaded = 0;
 	memShift = 0;
