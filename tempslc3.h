@@ -81,9 +81,12 @@ typedef unsigned short Register;
 // lc3.c
 
 typedef struct BUFFER {
-	unsigned int PC;
-	unsigned short Rd;
-	unsigned int 
+	Register PC;
+	Register IR;
+	Register Rd;
+	Register Opcode;
+	Register A;		//16-bit value from Rs
+	Register B;		//16-bit value from either Rs2 or SEXT(immed)
 } BUFFER, *BUFFER_p;
 
 typedef struct CPU_s{
@@ -96,5 +99,5 @@ typedef struct CPU_s{
 	unsigned int Z;
 	char gotC;
 	unsigned short breakPoints[MAX_BREAKPOINTS];
-	unsigned long buffers[MAX_BREAKPOINTS];
+	struct BUFFER buffers[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;

@@ -301,6 +301,35 @@ int controller (CPU_p cpu, int isRunning) {
 	}
     for (;;) {
         switch (state) {
+			case STORE: // Look at ST. Microstate 16 is the store to memory
+                switch (opcode) {
+					case ADD:
+						cpu->r[Rd] = cpu->Res;
+
+						break;
+					case AND:
+						cpu->r[Rd] = cpu->Res;
+						break;
+					case NOT:
+						cpu->r[Rd] = cpu->Res;
+						break;
+					case LDR:
+					case LD:
+						cpu->r[Rd] = cpu->MDR;
+						cc = cpu->r[Rd];
+						chooseFlag (cpu, cc);
+						break;
+					case LEA:
+						cpu->r[Rd] = cpu->PC + sext9(immed_offset);
+						cc = cpu->r[Rd];
+						chooseFlag (cpu, cc);
+						break;
+					case STR:
+					case ST:
+						memory[cpu->MAR] = cpu->MDR;
+						break;
+	                }
+                //state = FETCH;
             case FETCH: // microstates 18, 33, 35 in the book
 				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
 				cpu->PC++;	// increment PC
@@ -445,35 +474,7 @@ int controller (CPU_p cpu, int isRunning) {
                 }
                 state = STORE;
 			//add case of MEM here
-            case STORE: // Look at ST. Microstate 16 is the store to memory
-                switch (opcode) {
-					case ADD:
-						cpu->r[Rd] = cpu->Res;
-
-						break;
-					case AND:
-						cpu->r[Rd] = cpu->Res;
-						break;
-					case NOT:
-						cpu->r[Rd] = cpu->Res;
-						break;
-					case LDR:
-					case LD:
-						cpu->r[Rd] = cpu->MDR;
-						cc = cpu->r[Rd];
-						chooseFlag (cpu, cc);
-						break;
-					case LEA:
-						cpu->r[Rd] = cpu->PC + sext9(immed_offset);
-						cc = cpu->r[Rd];
-						chooseFlag (cpu, cc);
-						break;
-					case STR:
-					case ST:
-						memory[cpu->MAR] = cpu->MDR;
-						break;
-	                }
-                state = FETCH;
+            
                 break;
         }
 		if (!isRunning) {
