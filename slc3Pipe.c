@@ -302,21 +302,25 @@ int controller (CPU_p cpu, int isRunning) {
     for (;;) {
         switch (state) {
             case FETCH: // microstates 18, 33, 35 in the book
-            	 cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
-            	 cpu->PC++;	// increment PC
-            	 cpu->MDR = memory[cpu->MAR];
-            	 cpu->ir = cpu->MDR;
-            	 cc = 0;
-               state = IDRR;
+				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
+				cpu->PC++;	// increment PC
+				cpu->MDR = memory[cpu->MAR];
+				cpu->ir = cpu->MDR;
+				cc = 0;
+				cpu->buffers[0]->PC = cpu->PC;		//IF Buffer
+				cpu->buffers[0]->IR = cpu->IR;
+                state = IDRR;
             case IDRR:
-				opcode = cpu->ir >> OPCODE_SHIFT;			//Decode Stage
-				Rd = cpu->ir & DR_MASK;
+				opcode = cpu->buffers[0]->IR >> OPCODE_SHIFT;			//Decode Stage
+				Rd = cpu->buffers[0]->IR & DR_MASK;
 				Rd = (short)Rd >> DR_SHIFT;
-				Rs1 = cpu->ir & SR_MASK;
+				Rs1 = cpu->buffers[0]->IR & SR_MASK;
 				Rs1 = (short)Rs1 >> SR_SHIFT;
 				Rs2 = cpu->ir & SR2_MASK;
-				immed_offset = cpu->ir & SR_MASK;
-				BaseR = (cpu->ir & BASE_MASK) >> SR_SHIFT;
+				immed_offset = cpu->buffers[0]->IR & SR_MASK;
+				BaseR = (cpu->buffers[0]->IR & BASE_MASK) >> SR_SHIFT;
+				
+				//IDRR Buffer
 				
                 switch (opcode) {							//Evaluate Address Stage
 					case LDR:
