@@ -91,21 +91,13 @@ void MemWindow(int memShift) {
 void CPUwindow(CPU_p cpu) {
     box(CPUWindow, 0, 0);
     mvwprintw(CPUWindow, 0, 1, "CPU Data:");
-    //mvwprintw(CPUWindow, 1, 1, "PC:x%04X   IR:x%04X", cpu->PC, cpu->ir);
     mvwprintw(CPUWindow, 1,1, "PC:x%04X", cpu->PC);
     mvwprintw(CPUWindow, 2,1, "IR:x%04X", cpu->ir);
-
     mvwprintw(CPUWindow, 3,1, "A: x%04X", cpu->A);
     mvwprintw(CPUWindow, 4,1, "B: x%04X", cpu->B);
-    //mvwprintw(CPUWindow, 2, 1, "A: x%04X   B: x%04X", cpu->A, cpu->B);
-
-    //mvwprintw(CPUWindow, 3, 1, "MAR:x%04X  MDR:x%04X", cpu->MAR, cpu->MDR);
     mvwprintw(CPUWindow, 5,1, "MAR:x%04X", cpu->MAR);
     mvwprintw(CPUWindow, 6,1, "MDR:x%04X", cpu->MDR);
-
-    mvwprintw(CPUWindow, 7,1, "N%d Z:%d P:%d", cpu->N, cpu->Z, cpu->P);
-
-    //mvwprintw(CPUWindow, 4, 1, "N:%d   Z:%d   P:%d", cpu->N, cpu->Z, cpu->P);
+    mvwprintw(CPUWindow, 7,1, "N:%d Z:%d P:%d", cpu->N, cpu->Z, cpu->P);
     wrefresh(CPUWindow);
 }
 
@@ -153,11 +145,11 @@ void MainInputWindow() {
                 mvwprintw(MainInput, 1, 9, choices[i]);
             if (i == 1)
                 mvwprintw(MainInput, 1, 16, choices[i]);
-            if(i == 2)
+            if (i == 2)
                 mvwprintw(MainInput, 1, 23, choices[i]);
             if (i == 3)
                 mvwprintw(MainInput, 1, 37, choices[i]);
-            if(i == 4)
+            if (i == 4)
                 mvwprintw(MainInput, 1, 51, choices[i]);
             if (i == 5)
                 mvwprintw(MainInput, 1, 57, choices[i]);
@@ -178,6 +170,7 @@ void MainInputWindow() {
             case ENTER_KEY:
                 wmove(MainInput, 2, 1);
                 wclrtoeol(MainInput);
+                mvwprintw(MainInput, 2, 77, "|");
                 if (choices[highlight] == "Load") {
                     mvwprintw(MainInput, 2, 1, "File Path:");
                     mvwscanw(MainInput, 2, 12, "%s", &fileName);
@@ -188,18 +181,12 @@ void MainInputWindow() {
                     exit(0);
                 }
                 if (choices[highlight] == "Step") {
-                    wmove(MainInput, 2, 1);
-                    wclrtoeol(MainInput);
                     mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
                 }
                 if (choices[highlight] == "Display Mem") {
-                    wmove(MainInput, 2, 1);
-                    wclrtoeol(MainInput);
                     mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
                 }
                 if (choices[highlight] == "Switch View") {
-                    wmove(MainInput, 2, 1);
-                    wclrtoeol(MainInput);
                     if (currentWindow == 0) {
                         DisplayCacheWindow();
                         mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
@@ -209,8 +196,6 @@ void MainInputWindow() {
                     }
                 }
                 if (choices[highlight] == "Run") {
-                    wmove(MainInput, 2, 1);
-                    wclrtoeol(MainInput);
                     mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
                 }
                 break;
