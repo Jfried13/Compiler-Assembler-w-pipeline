@@ -19,6 +19,7 @@ WINDOW *CacheWindow;
 int inputValue;
 char inputString[];
 int run = 1;
+int currentWindow = 0;
 
 #define PHEIGHT 18
 #define PWIDTH 48
@@ -111,12 +112,14 @@ void CPUwindow(CPU_p cpu) {
 
 
 void DisplayPiplineWindow() {
+    currentWindow = 0;
     box(Pipeline, 0, 0);
     mvwprintw(Pipeline, 0, 15, "PipeLine Info:");
     wrefresh(Pipeline);
 }
 
 void DisplayCacheWindow(){
+    currentWindow = 1;
     box(Pipeline, 0, 0);
     mvwprintw(Pipeline, 0, 15, "Cache Info:");
     wrefresh(Pipeline);
@@ -184,15 +187,36 @@ void MainInputWindow() {
                 if (choices[highlight] == "Exit") {
                     exit(0);
                 }
-//                mvwprintw(MainInput, 2, 1, choices[highlight]);
+                if (choices[highlight] == "Step") {
+                    wmove(MainInput, 2, 1);
+                    wclrtoeol(MainInput);
+                    mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
+                }
+                if (choices[highlight] == "Display Mem") {
+                    wmove(MainInput, 2, 1);
+                    wclrtoeol(MainInput);
+                    mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
+                }
+                if (choices[highlight] == "Switch View") {
+                    wmove(MainInput, 2, 1);
+                    wclrtoeol(MainInput);
+                    if (currentWindow == 0) {
+                        DisplayCacheWindow();
+                        mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
+                    } else {
+                        DisplayPiplineWindow();
+                        mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
+                    }
+                }
+                if (choices[highlight] == "Run") {
+                    wmove(MainInput, 2, 1);
+                    wclrtoeol(MainInput);
+                    mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
+                }
                 break;
             default:
                 break;
         }
-//        if(choice = KEY_ENTER) {
-//            mvwprintw(MainWindow, 1, 1, choices[highlight]);
-//            wrefresh(MainWindow);
-//        }
     }
 }
 
