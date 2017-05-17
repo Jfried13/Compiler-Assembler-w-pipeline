@@ -16,9 +16,7 @@ WINDOW *MainInput;
 WINDOW *Pipeline;
 WINDOW *CacheWindow;
 
-int inputValue;
-char inputString[];
-int run = 1;
+// 0 for pipline window, 1 for cache window
 int currentWindow = 0;
 
 #define PHEIGHT 18
@@ -45,9 +43,7 @@ int currentWindow = 0;
 #define CPUHeight 8
 #define CPUWidth 13
 
-int getInput() {
-    return inputValue;
-}
+void MainInputWindow();
 
 
 void displayTitle() {
@@ -129,7 +125,7 @@ void display(CPU_p cpu, int mem) {
 }
 
 void MainInputWindow() {
-    char *fileName;
+    char fileName[MAX_FILE_NAME];
     keypad(MainInput, true);
     box(MainInput, 0, 0);
     char* choices[6] = {"Load", "Step", "Display Mem", "Switch View", "Run", "Exit"};
@@ -172,12 +168,14 @@ void MainInputWindow() {
                 wclrtoeol(MainInput);
                 mvwprintw(MainInput, 2, 77, "|");
                 if (choices[highlight] == "Load") {
-                    mvwprintw(MainInput, 2, 1, "File Path:");
+                    mvwprintw(MainInput, 2, 1, "File Name:");
                     mvwscanw(MainInput, 2, 12, "%s", &fileName);
                     mvwprintw(MainInput, 2, 35, "File name is:");
-                    mvwprintw(MainInput, 2, 49, &fileName);
+                    mvwprintw(MainInput, 2, 49, fileName);
                 }
                 if (choices[highlight] == "Exit") {
+                    clear();
+                    endwin();
                     exit(0);
                 }
                 if (choices[highlight] == "Step") {

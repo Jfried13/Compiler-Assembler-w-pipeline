@@ -6,6 +6,7 @@ int memShift;
 int isLoaded;
 int memShift;
 char option;
+void cpuInit(CPU_p cpu);
 
 
 int main() {
