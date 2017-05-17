@@ -73,6 +73,7 @@
 #define HIGH_ORDER_BIT_VALUE9 0x0100
 
 #define SEXT5_MASK 0x001F
+#define ENTER_KEY 10
 
 #define MAX_MEMORY 500
 
@@ -91,7 +92,4 @@ typedef struct CPU_s{
 	unsigned int Z;
 	char gotC;
 	unsigned short breakPoints[MAX_BREAKPOINTS];
-	
 } CPU_s, *CPU_p;
-
-unsigned short memory[MAX_MEMORY];

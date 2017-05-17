@@ -14,9 +14,17 @@ WINDOW *MemoryWindow;
 WINDOW *CPUWindow;
 WINDOW *MainInput;
 WINDOW *Pipeline;
+WINDOW *CacheWindow;
+
+int inputValue;
+char inputString[];
+int run = 1;
 
 #define PHEIGHT 18
 #define PWIDTH 48
+
+#define CHEIGHT 18
+#define CWIDTH 48
 
 #define INPUTHEIGHT 4
 #define INPUTWIDTH 78
@@ -36,6 +44,11 @@ WINDOW *Pipeline;
 #define CPUHeight 8
 #define CPUWidth 13
 
+int getInput() {
+    return inputValue;
+}
+
+
 void displayTitle() {
     mvwprintw(MainWindow, 0, 28, "Welcome to LC3 Simulator");
     mvwprintw(IOWindow, 0, 37, " I/O ");
@@ -49,7 +62,7 @@ void mainWindow(){
 }
 
 
-void IOwindow () {
+void IOwindow() {
     box(IOWindow, 0, 0);
     displayTitle();
     wrefresh(IOWindow);
@@ -65,7 +78,7 @@ void RegWindow(CPU_p cpu){
     wrefresh(RegisterWindow);
 }
 
-void MemWindow(memShift) {
+void MemWindow(int memShift) {
     box(MemoryWindow, 0, 0);
     mvwprintw(MemoryWindow, 0, 4, "Memory:");
     for (int i = 0; i < 16; i++) {
@@ -95,35 +108,92 @@ void CPUwindow(CPU_p cpu) {
     wrefresh(CPUWindow);
 }
 
-void MainInputWindow() {
-    box(MainInput, 0, 0);
-    mvwprintw(MainInput, 1, 1, "  Select: 1)Load, 3)Step, 5)Display Mem, 6)Switch View, 7)Run, 9)Exit");
-    mvwprintw(MainInput, 2, 1, "  Input: ");
-    wrefresh(MainInput);
-    int value = getch();
-    mvwprintw(MainInput, 2, 9, " %c", value);
-    wrefresh(MainInput);
-}
 
-void PiplineWindow() {
+
+void DisplayPiplineWindow() {
     box(Pipeline, 0, 0);
-    mvwprintw(Pipeline, 0, 15, "Cache/PipeLine Info:");
-    wrefresh(Pipeline);
+    mvwprintw(Pipeline, 0, 15, "PipeLine Info:");
     wrefresh(Pipeline);
 }
 
+void DisplayCacheWindow(){
+    box(Pipeline, 0, 0);
+    mvwprintw(Pipeline, 0, 15, "Cache Info:");
+    wrefresh(Pipeline);
+}
 
 void display(CPU_p cpu, int mem) {
-    refresh();
     mainWindow();
     RegWindow(cpu);
     MemWindow(mem);
     CPUwindow(cpu);
-    PiplineWindow();
+    DisplayPiplineWindow();
     IOwindow();
     MainInputWindow();
     refresh();
-    getch();
+}
+
+void MainInputWindow() {
+    char *fileName;
+    keypad(MainInput, true);
+    box(MainInput, 0, 0);
+    char* choices[6] = {"Load", "Step", "Display Mem", "Switch View", "Run", "Exit"};
+    int choice;
+    int highlight = 0;
+    while (1){
+        mvwprintw(MainInput, 1, 1, "Select: ");
+        for (int i = 0; i < 6; i++) {
+            if (i == highlight)
+                wattron(MainInput, A_REVERSE);
+
+            if (i == 0)
+                mvwprintw(MainInput, 1, 9, choices[i]);
+            if (i == 1)
+                mvwprintw(MainInput, 1, 16, choices[i]);
+            if(i == 2)
+                mvwprintw(MainInput, 1, 23, choices[i]);
+            if (i == 3)
+                mvwprintw(MainInput, 1, 37, choices[i]);
+            if(i == 4)
+                mvwprintw(MainInput, 1, 51, choices[i]);
+            if (i == 5)
+                mvwprintw(MainInput, 1, 57, choices[i]);
+            wattroff(MainInput, A_REVERSE);
+        }
+        choice = wgetch(MainInput);
+        switch(choice) {
+            case KEY_LEFT:
+                highlight--;
+                if (highlight == -1)
+                    highlight = 0;
+                break;
+            case KEY_RIGHT:
+                highlight++;
+                if (highlight == 6)
+                    highlight = 5;
+                break;
+            case ENTER_KEY:
+                wmove(MainInput, 2, 1);
+                wclrtoeol(MainInput);
+                if (choices[highlight] == "Load") {
+                    mvwprintw(MainInput, 2, 1, "File Path:");
+                    mvwscanw(MainInput, 2, 12, "%s", &fileName);
+                    mvwprintw(MainInput, 2, 35, "File name is:");
+                    mvwprintw(MainInput, 2, 49, &fileName);
+                }
+                if (choices[highlight] == "Exit") {
+                    exit(0);
+                }
+//                mvwprintw(MainInput, 2, 1, choices[highlight]);
+                break;
+            default:
+                break;
+        }
+//        if(choice = KEY_ENTER) {
+//            mvwprintw(MainWindow, 1, 1, choices[highlight]);
+//            wrefresh(MainWindow);
+//        }
+    }
 }
 
 void initializeWindow() {
@@ -135,6 +205,7 @@ void initializeWindow() {
     CPUWindow = newwin(CPUHeight, CPUWidth, 11, 1);
     MainInput = newwin(INPUTHEIGHT, INPUTWIDTH, 20, 1);
     Pipeline = newwin(PHEIGHT,PWIDTH, 1, 15);
+    CacheWindow = newwin(PHEIGHT,PWIDTH, 1, 15);
 }
 
 
