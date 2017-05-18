@@ -302,7 +302,7 @@ int controller (CPU_p cpu, int isRunning) {
     for (;;) {
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
-                switch (opcode) {
+                switch (cpu->buffers[3].Opcode) {
 					case ADD:
 						cpu->r[Rd] = cpu->Res;
 
@@ -331,13 +331,22 @@ int controller (CPU_p cpu, int isRunning) {
 	                }
                 //state = FETCH;
 			case MEM:
+				switch (cpu->buffers[2].Opcode) {
+					case ST:
+					case STR:
+					case STI:
+					case LD:
+					case LDR:
+					case LDI:
+					case LEA:
+				}
 				//Do Mem work with EBuff (buffers[2]) here first.
 				//Create some unsigned A and B local variables.
 				cpu->buffers[3] = cpu->buffers[2];
 				cpu->buffers[3].A = A;
 				cpu->buffers[3].B = B;
 			case EXECUTE: // Note that ST does not have an execute microstate
-				switch (opcode) {
+				switch (cpu->buffers[1].Opcode) {
 					case ADD:
 						if (cpu->A < 0) {
 							cpu->Res = -(cpu->A) + (cpu->B);
@@ -406,18 +415,18 @@ int controller (CPU_p cpu, int isRunning) {
 				cpu->buffers[2].A = A;
 				cpu->buffers[2].B = B;
 			case IDRR:
-				opcode = cpu->buffers[0]->IR >> OPCODE_SHIFT;			//Decode Stage
-				Rd = cpu->buffers[0]->IR & DR_MASK;
-				Rd = (short)Rd >> DR_SHIFT;
-				Rs1 = cpu->buffers[0]->IR & SR_MASK;
-				Rs1 = (short)Rs1 >> SR_SHIFT;
-				Rs2 = cpu->ir & SR2_MASK;
+				cpu->buffers[1].Opcode = cpu->buffers[0]->IR >> OPCODE_SHIFT;			//Decode Stage
+				cpu->buffers[1].Rd = cpu->buffers[0]->IR & DR_MASK;
+				cpu->buffers[1].Rd = (short)cpu->buffers[1].Rd >> DR_SHIFT;
+				cpu->buffers[1].A = cpu->buffers[0]->IR & SR_MASK;
+				cpu->buffers[1].A = (short)cpu->buffers[1].A >> SR_SHIFT;
+				cpu->buffers[1].B = cpu->buffers[1].B & SR2_MASK;
 				immed_offset = cpu->buffers[0]->IR & SR_MASK;
 				BaseR = (cpu->buffers[0]->IR & BASE_MASK) >> SR_SHIFT;
 				
 				//IDRR Buffer
 				
-                switch (opcode) {							//Evaluate Address Stage
+                switch (cpu->buffers[1].Opcode) {							//Evaluate Address Stage
 					case LDR:
 						cpu->MAR = (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL;
 						break;
@@ -435,14 +444,14 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
                 }
 
-                switch (opcode) {							//Fetch Operand Stage
+                switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
 					case LDR:
 					case LD:
 					 cpu->MDR = memory[cpu->MAR];
 						break;
 					case ADD:
 						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
-							cpu->A = cpu->r[Rs1];
+							cpu->A = cpu->r[cpu->buffers[1].A];
 							cpu->B = (immed_offset & SEXT5_MASK);
 						} else{
 							cpu->A = cpu->r[Rs1];
@@ -452,26 +461,26 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case AND:
 					if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
-							cpu->A = cpu->r[Rs1];
-							cpu->B = (immed_offset & SEXT5_MASK);
+							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
+							cpu->buffers[1].B = (immed_offset & SEXT5_MASK);
 						} else{
-							cpu->A = cpu->r[Rs1];
-							cpu->B = cpu->r[Rs2];
+							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
+							cpu->buffers[1].B = cpu->r[cpu->buffers[1].B];
 						}
 						break;
 					case NOT:
-						cpu->A = cpu->r[Rs1];
+						cpu->A = cpu->r[cpu->buffers[1].A];
 						break;
 					case STR:
 					case ST:
-						cpu->MDR = cpu->r[Rd];
+						cpu->MDR = cpu->r[cpu->buffers[1].Rd];
 						break;
 					case TRAP:
 						cpu->MDR = memory[cpu->MAR];
-						cpu->r[7] = cpu->PC;
+						cpu->r[7] = cpu->buffers[1].PC;
                 }
 				cpu->buffers[1] = cpu->buffers[0];
-				cpu->buffers[1].A = A;
+				cpu->buffers[1].A = A; //might need to take these out
 				cpu->buffers[1].B = B;
                 state = EXECUTE;
             case FETCH: // microstates 18, 33, 35 in the book
@@ -481,7 +490,7 @@ int controller (CPU_p cpu, int isRunning) {
 				cpu->ir = cpu->MDR;
 				cc = 0;
 				cpu->buffers[0]->PC = cpu->PC;		//IF Buffer
-				cpu->buffers[0]->IR = cpu->IR;
+				cpu->buffers[0]->IR = cpu->ir;
                 state = IDRR;     
 					//break;
                 

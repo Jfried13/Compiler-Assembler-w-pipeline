@@ -5,12 +5,18 @@
 #include <termios.h> 
 //#include <ncurses.h>
 
-
+// states
 #define FETCH 0
 #define IDRR 1
 #define EXECUTE 2
 #define MEM 3
 #define STORE 4
+
+// buffers
+#define FBUFF 0
+#define DBUFF 1
+#define EBUFF 2
+#define MBUFF 3
 
 // instructions
 #define ADD 1
@@ -32,6 +38,7 @@
 #define OUT 0x21
 #define PUTS 0x22
 
+// debug actions
 #define EXIT 9
 #define RUN 7
 #define EDIT 6
@@ -40,6 +47,7 @@
 #define SAVE 2
 #define LOAD 1
 #define SET_BRKPTS 8
+
 // etc.
 #define SEXT6_SIGN_EXTEND 0xFFC0
 #define SEXT6_MASK 0x003F
