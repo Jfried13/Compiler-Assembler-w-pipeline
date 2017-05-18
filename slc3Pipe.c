@@ -330,16 +330,82 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 	                }
                 //state = FETCH;
-            case FETCH: // microstates 18, 33, 35 in the book
-				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
-				cpu->PC++;	// increment PC
-				cpu->MDR = memory[cpu->MAR];
-				cpu->ir = cpu->MDR;
-				cc = 0;
-				cpu->buffers[0]->PC = cpu->PC;		//IF Buffer
-				cpu->buffers[0]->IR = cpu->IR;
-                state = IDRR;
-            case IDRR:
+			case MEM:
+				//Do Mem work with EBuff (buffers[2]) here first.
+				//Create some unsigned A and B local variables.
+				cpu->buffers[3] = cpu->buffers[2];
+				cpu->buffers[3].A = A;
+				cpu->buffers[3].B = B;
+			case EXECUTE: // Note that ST does not have an execute microstate
+				switch (opcode) {
+					case ADD:
+						if (cpu->A < 0) {
+							cpu->Res = -(cpu->A) + (cpu->B);
+						} else if (cpu->B < 0) {
+							cpu->Res = (cpu->A) -(cpu->B);
+						} else if ((cpu->A < 0) & (cpu->B < 0)) {
+							cpu->Res = -(cpu->A) -(cpu->B);
+						} else {
+							cpu->Res = (cpu->A) + (cpu->B);
+						}
+						cc = (short int) cpu->Res;
+						chooseFlag (cpu, cc);
+						break;
+					case AND:
+						cpu->Res = cpu->A & cpu->B;
+						cpu->N = 0;
+						cpu->Z = 0;
+						cpu->P = 0;
+						cc = cpu->Res;
+						chooseFlag (cpu, cc);
+						break;
+					case NOT:
+						cpu->Res = ~(cpu->A);
+						cpu->N = 0;
+						cpu->Z = 0;
+						cpu->P = 0;
+						cc = (short) cpu->Res;
+						chooseFlag (cpu, cc);
+						break;
+					case TRAP:
+						cpu->PC = cpu->MDR;
+						value = trap(cpu, cpu->MAR);
+						cpu->PC = cpu->r[7];
+						
+						if (value == 1) {
+							return 0;
+						} else if (value > 1) {
+							cpu->r[0] = (char) value;
+							cpu->gotC = (char) value;
+							cpu->r[Rd] = value;
+						}
+						break;
+					case JSRR:
+						cpu->r[7] = cpu->PC;
+						cpu->PC = cpu->r[BaseR];
+						break;
+					case JMP:
+						cpu->r[7] = cpu->PC;
+						cpu->PC = cpu->r[Rs1];
+						break;
+					case BR:
+						if (cpu->N && (Rd & 4)) {
+							cpu->PC = cpu->PC + sext9(immed_offset);
+							break;
+						}
+						if (cpu->Z && (Rd & 2)) {
+							cpu->PC = cpu->PC + sext9(immed_offset);
+							break;
+						}
+						if (cpu->P && (Rd & 1)) {
+							cpu->PC = cpu->PC + sext9(immed_offset);
+							break;
+						}
+				}
+				cpu->buffers[2] = cpu->buffers[1];
+				cpu->buffers[2].A = A;
+				cpu->buffers[2].B = B;
+			case IDRR:
 				opcode = cpu->buffers[0]->IR >> OPCODE_SHIFT;			//Decode Stage
 				Rd = cpu->buffers[0]->IR & DR_MASK;
 				Rd = (short)Rd >> DR_SHIFT;
@@ -404,76 +470,22 @@ int controller (CPU_p cpu, int isRunning) {
 						cpu->MDR = memory[cpu->MAR];
 						cpu->r[7] = cpu->PC;
                 }
+				cpu->buffers[1] = cpu->buffers[0];
+				cpu->buffers[1].A = A;
+				cpu->buffers[1].B = B;
                 state = EXECUTE;
-            case EXECUTE: // Note that ST does not have an execute microstate
-                switch (opcode) {
-					case ADD:
-						if (cpu->A < 0) {
-							cpu->Res = -(cpu->A) + (cpu->B);
-						} else if (cpu->B < 0) {
-							cpu->Res = (cpu->A) -(cpu->B);
-						} else if ((cpu->A < 0) & (cpu->B < 0)) {
-							cpu->Res = -(cpu->A) -(cpu->B);
-						} else {
-							cpu->Res = (cpu->A) + (cpu->B);
-						}
-						cc = (short int) cpu->Res;
-						chooseFlag (cpu, cc);
-						break;
-					case AND:
-						cpu->Res = cpu->A & cpu->B;
-						cpu->N = 0;
-						cpu->Z = 0;
-						cpu->P = 0;
-						cc = cpu->Res;
-						chooseFlag (cpu, cc);
-						break;
-					case NOT:
-						cpu->Res = ~(cpu->A);
-						cpu->N = 0;
-						cpu->Z = 0;
-						cpu->P = 0;
-						cc = (short) cpu->Res;
-						chooseFlag (cpu, cc);
-						break;
-					case TRAP:
-						cpu->PC = cpu->MDR;
-						value = trap(cpu, cpu->MAR);
-						cpu->PC = cpu->r[7];
-						
-						if (value == 1) {
-							return 0;
-						} else if (value > 1) {
-							cpu->r[0] = (char) value;
-							cpu->gotC = (char) value;
-							cpu->r[Rd] = value;
-						}
-						break;
-					case JSRR:
-						cpu->r[7] = cpu->PC;
-						cpu->PC = cpu->r[BaseR];
-						break;
-					case JMP:
-						cpu->r[7] = cpu->PC;
-						cpu->PC = cpu->r[Rs1];
-						break;
-					case BR:
-						if (cpu->N && (Rd & 4)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
-							break;
-						}
-						if (cpu->Z && (Rd & 2)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
-							break;
-						}
-						if (cpu->P && (Rd & 1)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
-							break;
-						}
-					break;
-                }
-                state = STORE;
-			//add case of MEM here
+            case FETCH: // microstates 18, 33, 35 in the book
+				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
+				cpu->PC++;	// increment PC
+				cpu->MDR = memory[cpu->MAR];
+				cpu->ir = cpu->MDR;
+				cc = 0;
+				cpu->buffers[0]->PC = cpu->PC;		//IF Buffer
+				cpu->buffers[0]->IR = cpu->IR;
+                state = IDRR;     
+					//break;
+                
+                //state = STORE;
             
                 break;
         }
