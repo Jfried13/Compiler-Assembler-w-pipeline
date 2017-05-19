@@ -75,6 +75,7 @@
 
 #define MAX_FILE_NAME 100
 #define MAX_BREAKPOINTS 4
+#define MAX_BUFFERS 4
 #define AVAILABLE_BRKPT 9999
 #define SEXT9_SIGN_EXTEND 0xFE00
 #define HIGH_ORDER_BIT_VALUE8 0x0080    // 0000 0000 1000 0000
@@ -98,15 +99,22 @@ typedef struct BUFFER {
 	Register B;		//16-bit value from either Rs2 or SEXT(immed)
 } BUFFER, *BUFFER_p;
 
+typedef struct ALU {
+	Register A;
+	Register B;
+	Register R;
+} ALU_s;
+
 typedef struct CPU_s{
 	Register r[8];
 	Register A, B, Res;
 	Register PC, ir;
 	Register MAR, MDR;
+	ALU_s alu;
 	unsigned int N;
 	unsigned int P;
 	unsigned int Z;
 	char gotC;
-	unsigned short breakPoints[MAX_BREAKPOINTS];
+	unsigned short breakPoints[MAX_BUFFERS];
 	struct BUFFER buffers[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;

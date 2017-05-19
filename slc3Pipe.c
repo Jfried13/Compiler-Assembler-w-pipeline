@@ -295,14 +295,14 @@ int controller (CPU_p cpu, int isRunning) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
                 switch (cpu->buffers[3].Opcode) {
 					case ADD:
-						cpu->r[Rd] = cpu->Res;
+						cpu->r[Rd] = cpu->buffers[3].A;
 
 						break;
 					case AND:
-						cpu->r[Rd] = cpu->Res;
+						cpu->r[Rd] = cpu->buffers[3].A;
 						break;
 					case NOT:
-						cpu->r[Rd] = cpu->Res;
+						cpu->r[Rd] = cpu->buffers[3].A;
 						break;
 					case LDR:
 					case LD:
@@ -312,7 +312,7 @@ int controller (CPU_p cpu, int isRunning) {
 						//chooseFlag (cpu, cc);
 						break;
 					case LEA:
-						cpu->r[Rd] = cpu->PC + sext9(immed_offset);
+						cpu->r[Rd] = cpu->buffers[3].PC + sext9(immed_offset);
 						setCC(cpu, cpu->r[Rd]);
 						//cc = cpu->r[Rd];
 						//chooseFlag (cpu, cc);
@@ -341,14 +341,14 @@ int controller (CPU_p cpu, int isRunning) {
 			case EXECUTE: // Note that ST does not have an execute microstate
 				switch (cpu->buffers[1].Opcode) {
 					case ADD:
-						if (cpu->A < 0) {
-							cpu->Res = -(cpu->A) + (cpu->B);
+						if (cpu->alu.A < 0) {
+							cpu->buffers[2].A = -(cpu->alu.A) + (cpu->alu.B);
 						} else if (cpu->B < 0) {
-							cpu->Res = (cpu->A) -(cpu->B);
-						} else if ((cpu->A < 0) & (cpu->B < 0)) {
-							cpu->Res = -(cpu->A) -(cpu->B);
+							cpu->buffers[2].A = (cpu->alu.A) -(cpu->alu.B);
+						} else if ((cpu->alu.A < 0) & (cpu->alu.B < 0)) {
+							cpu->buffers[2].A = -(cpu->alu.A) -(cpu->alu.B);
 						} else {
-							cpu->Res = (cpu->A) + (cpu->B);
+							cpu->buffers[2].A = (cpu->alu.A) + (cpu->alu.B);
 						}
 						setCC(cpu, cpu->Res);
 						//cc = (short int) cpu->Res;
