@@ -12,6 +12,7 @@
 #define MEM 3
 #define STORE 4
 
+
 // buffers
 #define FBUFF 0
 #define DBUFF 1
@@ -31,6 +32,8 @@
 #define JMP 12
 #define JSRR 4
 #define BR 0
+#define PP 13
+#define NOP 16
 
 // traps
 #define HALT 0x25
