@@ -12,7 +12,7 @@ int dialog (CPU_p cpu);
 
 char getch ();
 
-void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
+void setCC(CPU_p cpu, Register Rd);
 
 void writeMemory(char * fileToWriteToName);
 
@@ -69,33 +69,23 @@ int trap(CPU_p cpu, int trap_vector) {
 	}
 	
 	return value;
-    //hello connor
 }
 
 
-/*
-	This is a helper function to choose which CC values to set (N, Z, or, P)
-*/
-void chooseFlag (CPU_p cpu, int cc) {
-	if (cc < 0){
-		setFlags(cpu, 1, 0, 0);
+void setCC(CPU_p cpu, Register Rd) {
+	if (Rd == 0) {
+		cpu->N = 0;
+		cpu->Z = 1;
+		cpu->P = 0;
+	} else if (Rd & HIGH_ORDER_BIT_VALUE8) { // 0000 0000 1000 0000
+		cpu->N = 1;
+		cpu->Z = 0;
+		cpu->P = 0;
+	} else {
+		cpu->N = 0;
+		cpu->Z = 0;
+		cpu->P = 1;
 	}
-	if (cc == 0){
-		setFlags(cpu, 0, 1, 0);
-	}
-	if (cc > 0){
-		setFlags(cpu, 0, 0, 1);
-	}
-}
-	
-
-/*
-	This function sets the appropriate flags.
-*/
-void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos) {
-	cpu->N = neg;
-	cpu->Z = zero;
-	cpu->P = pos;
 }
 
 
@@ -317,13 +307,15 @@ int controller (CPU_p cpu, int isRunning) {
 					case LDR:
 					case LD:
 						cpu->r[Rd] = cpu->MDR;
-						cc = cpu->r[Rd];
-						chooseFlag (cpu, cc);
+						setCC(cpu, cpu->r[Rd]);
+						//cc = cpu->r[Rd];
+						//chooseFlag (cpu, cc);
 						break;
 					case LEA:
 						cpu->r[Rd] = cpu->PC + sext9(immed_offset);
-						cc = cpu->r[Rd];
-						chooseFlag (cpu, cc);
+						setCC(cpu, cpu->r[Rd]);
+						//cc = cpu->r[Rd];
+						//chooseFlag (cpu, cc);
 						break;
 					case STR:
 					case ST:
@@ -358,24 +350,27 @@ int controller (CPU_p cpu, int isRunning) {
 						} else {
 							cpu->Res = (cpu->A) + (cpu->B);
 						}
-						cc = (short int) cpu->Res;
-						chooseFlag (cpu, cc);
+						setCC(cpu, cpu->Res);
+						//cc = (short int) cpu->Res;
+						//chooseFlag (cpu, cc);
 						break;
 					case AND:
 						cpu->Res = cpu->A & cpu->B;
 						cpu->N = 0;
 						cpu->Z = 0;
 						cpu->P = 0;
-						cc = cpu->Res;
-						chooseFlag (cpu, cc);
+						setCC(cpu, cpu->Res);
+						//cc = cpu->Res;
+						//chooseFlag (cpu, cc);
 						break;
 					case NOT:
 						cpu->Res = ~(cpu->A);
 						cpu->N = 0;
 						cpu->Z = 0;
 						cpu->P = 0;
-						cc = (short) cpu->Res;
-						chooseFlag (cpu, cc);
+						setCC(cpu, cpu->Res);
+						//cc = (short) cpu->Res;
+						//chooseFlag (cpu, cc);
 						break;
 					case TRAP:
 						cpu->PC = cpu->MDR;
