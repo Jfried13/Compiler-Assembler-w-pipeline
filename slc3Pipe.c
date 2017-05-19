@@ -69,6 +69,7 @@ int trap(CPU_p cpu, int trap_vector) {
 	}
 	
 	return value;
+    //hello connor
 }
 
 
