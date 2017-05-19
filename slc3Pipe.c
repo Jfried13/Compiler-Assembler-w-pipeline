@@ -334,18 +334,17 @@ int controller (CPU_p cpu, int isRunning) {
 					case LEA:
 				}
 				//Do Mem work with EBuff (buffers[2]) here first.
-				//Create some unsigned A and B local variables.
 				cpu->buffers[3] = cpu->buffers[2];
-				cpu->buffers[3].A = A;
-				cpu->buffers[3].B = B;
+				cpu->buffers[3].A = cpu->alu.A;
+				cpu->buffers[3].B = cpu->alu.B;
 			case EXECUTE: // Note that ST does not have an execute microstate
 				switch (cpu->buffers[1].Opcode) {
 					case ADD:
-						if (cpu->alu.A < 0) {
+						if (cpu->alu.A & HIGH_ORDER_BIT_VALUE15) {
 							cpu->buffers[2].A = -(cpu->alu.A) + (cpu->alu.B);
-						} else if (cpu->B < 0) {
+						} else if (cpu->B & HIGH_ORDER_BIT_VALUE15) {
 							cpu->buffers[2].A = (cpu->alu.A) -(cpu->alu.B);
-						} else if ((cpu->alu.A < 0) & (cpu->alu.B < 0)) {
+						} else if ((cpu->alu.A & HIGH_ORDER_BIT_VALUE15) && (cpu->alu.B & HIGH_ORDER_BIT_VALUE15)) {
 							cpu->buffers[2].A = -(cpu->alu.A) -(cpu->alu.B);
 						} else {
 							cpu->buffers[2].A = (cpu->alu.A) + (cpu->alu.B);
@@ -355,28 +354,28 @@ int controller (CPU_p cpu, int isRunning) {
 						//chooseFlag (cpu, cc);
 						break;
 					case AND:
-						cpu->Res = cpu->A & cpu->B;
+						cpu->buffers[2].A = cpu->alu.A & cpu->alu.B;
 						cpu->N = 0;
 						cpu->Z = 0;
 						cpu->P = 0;
-						setCC(cpu, cpu->Res);
+						setCC(cpu, cpu->buffers[2].A);
 						//cc = cpu->Res;
 						//chooseFlag (cpu, cc);
 						break;
 					case NOT:
-						cpu->Res = ~(cpu->A);
+						cpu->buffers[2].A = ~(cpu->alu.A);
 						cpu->N = 0;
 						cpu->Z = 0;
 						cpu->P = 0;
-						setCC(cpu, cpu->Res);
+						setCC(cpu, cpu->buffers[2].A);
 						//cc = (short) cpu->Res;
 						//chooseFlag (cpu, cc);
 						break;
 					case TRAP:
-						cpu->PC = cpu->MDR;
+						cpu->buffers[2].PC = cpu->MDR;
 						value = trap(cpu, cpu->MAR);
-						cpu->PC = cpu->r[7];
-						
+						cpu->buffers[2].PC = cpu->r[7];
+						//start NOP stall
 						if (value == 1) {
 							return 0;
 						} else if (value > 1) {
@@ -386,24 +385,25 @@ int controller (CPU_p cpu, int isRunning) {
 						}
 						break;
 					case JSRR:
-						cpu->r[7] = cpu->PC;
-						cpu->PC = cpu->r[BaseR];
+						cpu->r[7] = cpu->buffers[2].PC;
+						cpu->buffers[2].PC = cpu->r[BaseR];
+						//start NOP stall
 						break;
 					case JMP:
-						cpu->r[7] = cpu->PC;
-						cpu->PC = cpu->r[Rs1];
+						cpu->r[7] = cpu->buffers[2].PC;
+						cpu->buffers[2].PC = cpu->r[buffers[2].A];
 						break;
 					case BR:
-						if (cpu->N && (Rd & 4)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+						if (cpu->N && (buffers[2].Rd & 4)) {
+							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
-						if (cpu->Z && (Rd & 2)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+						if (cpu->Z && (buffers[2].Rd & 2)) {
+							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
-						if (cpu->P && (Rd & 1)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+						if (cpu->P && (buffers[2].Rd & 1)) {
+							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
 				}
@@ -447,8 +447,8 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case ADD:
 						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
-							cpu->A = cpu->r[cpu->buffers[1].A];
-							cpu->B = (immed_offset & SEXT5_MASK);
+							cpu->buffers[2].A = cpu->r[cpu->buffers[1].A];
+							cpu->buffers[2].B = (immed_offset & SEXT5_MASK);
 						} else{
 							cpu->A = cpu->r[Rs1];
 							cpu->B = cpu->r[Rs2];
