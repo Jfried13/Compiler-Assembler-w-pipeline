@@ -1,4 +1,7 @@
 // lc3.h
+#ifndef TEMPSLC3
+#define TEMPSLC3 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> 
@@ -26,9 +29,11 @@
 #define TRAP 15
 #define LD 2
 #define LDR 6
+#define LDI 10
 #define LEA 14
 #define ST 3
 #define STR 7
+#define STI 11
 #define JMP 12
 #define JSRR 4
 #define BR 0
@@ -87,8 +92,12 @@
 #define PUSH_POP_BIT_MASK 0x0020
 
 #define SEXT5_MASK 0x001F
+#define ENTER_KEY 10
 
 #define MAX_MEMORY 500
+
+
+unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 
 
 typedef unsigned short Register;
@@ -102,7 +111,7 @@ typedef struct BUFFER {
 	Register Opcode;
 	Register A;		//16-bit value from Rs
 	Register B;		//16-bit value from either Rs2 or SEXT(immed)
-} BUFFER, *BUFFER_p;
+}BUFF;
 
 typedef struct ALU {
 	Register A;
@@ -123,3 +132,5 @@ typedef struct CPU_s{
 	unsigned short breakPoints[MAX_BUFFERS];
 	struct BUFFER buffers[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;
+
+#endif

@@ -3,14 +3,13 @@
  * Date: 5/3/2017
  */
 #include "tempslc3.h"
+#include "view.c"
 
 int controller (CPU_p, int);
 
-int displayScreen (CPU_p, int);
+//int display (CPU_p, int);
 
 int dialog (CPU_p cpu);
-
-char getch ();
 
 void setCC(CPU_p cpu, Register Rd);
 
@@ -18,7 +17,6 @@ void writeMemory(char * fileToWriteToName);
 
 
 // you can define a simple memory module here for this program
-unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
 
@@ -90,157 +88,79 @@ void setCC(CPU_p cpu, Register Rd) {
 
 
 /*
-	This function simulates the GETC trap command in assembly.
-*/
-char getch() {
-	char buf = 0;         
-	struct termios old = {0};         
-	if (tcgetattr(0, &old) < 0)                 
-		perror("tcsetattr()");         
-	old.c_lflag &= ~ICANON;         
-	old.c_lflag &= ~ECHO;         
-	old.c_cc[VMIN] = 1;         
-	old.c_cc[VTIME] = 0;         
-	if (tcsetattr(0, TCSANOW, &old) < 0)                 
-		perror("tcsetattr ICANON");        
-	if (read(0, &buf, 1) < 0)                 
-		perror ("read()");         
-	old.c_lflag |= ICANON;         
-	old.c_lflag |= ECHO;         
-	if (tcsetattr(0, TCSADRAIN, &old) < 0)                 
-		perror ("tcsetattr ~ICANON");         
-	return (buf); 
-}
-
-
-/*
-	This function displays the debug screen with LOAD, STEP, DISPLAY MEM, RUN, or EXIT
-	commands to use.
-*/
-int displayScreen(CPU_p cpu, int mem) {
-  printf("\n\n\n");
-	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
-	printf("\tRegisters \t\t\t\t    Memory\n");
-	int i = START_MEM + mem;
-	
-	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
-	printf("\tR%d: x%04X    FBUFF  PC: x%4X   IR: x%4X \t\t\t\t x%X: x%04X\n", 1, cpu->r[1], cpu->buffers[0] i+1, memory[2 + mem]);
-	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
-	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
-	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
-	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
-	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
-	printf("\tR%d: x%04X \t\t\t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
-
-	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	printf("          \t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
-	printf("          \t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
-	printf("          \t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
-	printf("          \t\t\t\t\t x%X: x%04X\n", i+3, memory[12 + mem]);
-	printf("          \t\t\t\t\t x%X: x%04X\n", i+4, memory[13 + mem]);
-	printf("          \t\t\t\t\t x%X: x%04X\n", i+5, memory[14 + mem]);
-	printf("          \t\t\t\t\t x%X: x%04X\n", i+6, memory[15 + mem]);
-	printf("          \t\t\t\t\t x%X: x%04X\n", i+7, memory[16 + mem]);
-	printf("  Select: 1)Load, 2)Save, 3)Step, 5)Display Mem, 6)Edit, 7)Run, 9)Exit\n");
-	return 0;
-}
-
-
-/*
 	This is the dialog function that provides the functionality to the choices shown in
-	the displayScreen.
+	the display.
 */
 int dialog(CPU_p cpu) {
-	int opNum = 0, isRunning = 0;
-	//long newValue;
-	unsigned int placeInMemory;
-	unsigned short newValue; 
-	char newMemoryValue[4];
-	char * charPtr;
-	char fileName[MAX_FILE_NAME];
-	FILE* inputFile;
-		while (opNum != EXIT) {
-			scanf("%d", &opNum);
-			switch (opNum) {
-				case LOAD:
-					printf("File Name: ");
-					scanf("%s", &fileName);
-					inputFile = fopen(fileName, "r");
-					if (inputFile == NULL) {
-						printf("DIDN'T OPEN");
-						break;
-					}
-					int i = 0;
-					while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
-						if (i == 0) {
-							cpu->PC = memory[0];
-						}
-						i++;
-					}
-					isLoaded = 1;
-					displayScreen(cpu, 0);
-					fclose(inputFile);
-					break;
-				case SAVE:
-					printf("Enter a file name to save to: ");
-					scanf("%s", &fileName);
-					writeMemory(fileName);
-					displayScreen(cpu, 0);
-					break;
-				case STEP:
-					if (isLoaded == 1) {
-						controller(cpu, 0);
-						opNum = 0;
-					} else {
-						printf("No file loaded!");
-					}
-					break;
-				case DISP_MEM:
-					printf("Position to move to? (in hex): ");
-					scanf("%4x", &memShift);
-					if(memShift - START_MEM > MAX_MEMORY - DISP_BOUNDARY) {
-						printf("Error: out of memory");
-						memShift = 0;
-						break;
-					} else {
-						displayScreen(cpu, memShift - START_MEM);
-					}
-					break;
-				case EDIT:
-					printf("What memory address would you like to edit: ");
-					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - START_MEM + 1]);
-					printf("What would you like the new value in location %04x to be: ", placeInMemory);
-					scanf("%s", &newMemoryValue);
-					printf("%s\n", newMemoryValue);
-					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
-					memory[placeInMemory - START_MEM + 1] = newValue;
-					displayScreen(cpu, placeInMemory - START_MEM - 7);
-					break;
-				case RUN:
-					controller(cpu, 1);
-					displayScreen(cpu, 0);
-					break;
-				case EXIT:
-					printf("Simulation Terminated.");
-					break;
-			}
-		}
+    int opNum = 0;
+    char fileName[MAX_FILE_NAME];
+    FILE* inputFile;
+    while (opNum != EXIT) {
+        opNum = getch();
+        scanw("%d", &opNum);
+        switch (opNum) {
+            case LOAD:
+                printw("File Name: ");
+                scanw("%s", &fileName);
+                inputFile = fopen(fileName, "r");
+                if (inputFile == NULL) {
+                    printw("DIDN'T OPEN");
+                    break;
+                }
+                int i = 0;
+                while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
+                    if (i == 0) {
+                        cpu->PC = memory[0];
+                    }
+                    i++;
+                }
+                isLoaded = 1;
+                display(cpu, 0);
+                fclose(inputFile);
+                break;
+            case STEP:
+                if (isLoaded == 1) {
+                    opNum = 0;
+                } else {
+                    printw("No file loaded!");
+                }
+                break;
+            case DISP_MEM:
+                printw("Position to move to? (in decimal): ");
+
+                scanw("%d", &memShift);
+                if(memShift > MAX_MEMORY - DISP_BOUNDARY) {
+                    printw("Error: out of memory");
+                    memShift = 0;
+                    break;
+                } else {
+                    display(cpu, memShift);
+                }
+                break;
+            case RUN:
+                display(cpu, 0);
+                break;
+            case EXIT:
+                printw("Simulation Terminated.");
+                endwin();
+                break;
+        }
+    }
 }
 
 /*
 	This method compares the current value of PC against any breakpoints entered by the user. 
 */
 int encounteredBreakPont(CPU_p cpu) {
-		int encountered = 0;
-		int i;
-		for (i = 0; i < MAX_BREAKPOINTS; i++) {
-			if(cpu->PC == cpu->breakPoints[i]) {
-				encountered = 1;
-				i = MAX_BREAKPOINTS;
-			}
+	int encountered = 0;
+	int i;
+	for (i = 0; i < MAX_BREAKPOINTS; i++) {
+		if(cpu->PC == cpu->breakPoints[i]) {
+			encountered = 1;
+			i = MAX_BREAKPOINTS;
 		}
-		return encountered; 
+	}
+	return encountered; 
 }
 
 /*
@@ -332,6 +252,7 @@ int controller (CPU_p cpu, int isRunning) {
 					case LDR:
 					case LDI:
 					case LEA:
+						break;
 				}
 				//Do Mem work with EBuff (buffers[2]) here first.
 				cpu->buffers[3] = cpu->buffers[2];
@@ -391,34 +312,34 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case JMP:
 						cpu->r[7] = cpu->buffers[2].PC;
-						cpu->buffers[2].PC = cpu->r[buffers[2].A];
+						cpu->buffers[2].PC = cpu->r[cpu->buffers[2].A];
 						break;
 					case BR:
-						if (cpu->N && (buffers[2].Rd & 4)) {
+						if (cpu->N && (cpu->buffers[2].Rd & 4)) {
 							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
-						if (cpu->Z && (buffers[2].Rd & 2)) {
+						if (cpu->Z && (cpu->buffers[2].Rd & 2)) {
 							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
-						if (cpu->P && (buffers[2].Rd & 1)) {
+						if (cpu->P && (cpu->buffers[2].Rd & 1)) {
 							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
 				}
 				cpu->buffers[2] = cpu->buffers[1];
-				cpu->buffers[2].A = A;
-				cpu->buffers[2].B = B;
+				cpu->buffers[2].A;
+				cpu->buffers[2].B;
 			case IDRR:
-				cpu->buffers[1].Opcode = cpu->buffers[0]->IR >> OPCODE_SHIFT;			//Decode Stage
-				cpu->buffers[1].Rd = cpu->buffers[0]->IR & DR_MASK;
+				cpu->buffers[1].Opcode = cpu->buffers[0].IR >> OPCODE_SHIFT;			//Decode Stage
+				cpu->buffers[1].Rd = cpu->buffers[0].IR & DR_MASK;
 				cpu->buffers[1].Rd = (short)cpu->buffers[1].Rd >> DR_SHIFT;
-				cpu->buffers[1].A = cpu->buffers[0]->IR & SR_MASK;
+				cpu->buffers[1].A = cpu->buffers[0].IR & SR_MASK;
 				cpu->buffers[1].A = (short)cpu->buffers[1].A >> SR_SHIFT;
 				cpu->buffers[1].B = cpu->buffers[1].B & SR2_MASK;
-				immed_offset = cpu->buffers[0]->IR & SR_MASK;
-				BaseR = (cpu->buffers[0]->IR & BASE_MASK) >> SR_SHIFT;
+				immed_offset = cpu->buffers[0].IR & SR_MASK;
+				BaseR = (cpu->buffers[0].IR & BASE_MASK) >> SR_SHIFT;
 				
 				//IDRR Buffer
 				
@@ -476,8 +397,8 @@ int controller (CPU_p cpu, int isRunning) {
 						cpu->r[7] = cpu->buffers[1].PC;
                 }
 				cpu->buffers[1] = cpu->buffers[0];
-				cpu->buffers[1].A = A; //might need to take these out
-				cpu->buffers[1].B = B;
+				cpu->buffers[1].A; //might need to take these out
+				cpu->buffers[1].B;
                 state = EXECUTE;
             case FETCH: // microstates 18, 33, 35 in the book
 				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
@@ -485,8 +406,8 @@ int controller (CPU_p cpu, int isRunning) {
 				cpu->MDR = memory[cpu->MAR];
 				cpu->ir = cpu->MDR;
 				cc = 0;
-				cpu->buffers[0]->PC = cpu->PC;		//IF Buffer
-				cpu->buffers[0]->IR = cpu->ir;
+				cpu->buffers[0].PC = cpu->PC;		//IF Buffer
+				cpu->buffers[0].IR = cpu->ir;
                 state = IDRR;     
 					//break;
                 
@@ -495,7 +416,7 @@ int controller (CPU_p cpu, int isRunning) {
                 break;
         }
 		if (!isRunning) {
-			displayScreen(cpu, 0);
+			display(cpu, 0);
 			scanf("%c", &charToPrint);
 		}
     }
@@ -577,7 +498,7 @@ void writeMemory(char * fileToWriteToName) {
 
 /*
 	This is the main function that starts the program off.
-*/
+
 int main(int argc, char* argv[]){
 
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -585,7 +506,19 @@ int main(int argc, char* argv[]){
 	memShift = 0;
 	CPU_p cpu = malloc(sizeof(CPU_s));
 	cpuInit(cpu);
-	displayScreen(cpu, memShift);
+	display(cpu, memShift);
 	dialog(cpu);
+	return 0;
+}*/
+
+int main() {
+	setvbuf(stdout, NULL, _IONBF, 0);
+	isLoaded = 0;
+    memShift = 0;
+    CPU_p cpu = malloc(sizeof(CPU_s));
+    cpuInit(cpu);
+    initializeWindow();
+    display(cpu, memShift);
+    endwin();
 	return 0;
 }
