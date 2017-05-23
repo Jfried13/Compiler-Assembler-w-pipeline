@@ -175,8 +175,8 @@ void MainInputWindow(CPU_p cpu) {
                 break;
             case KEY_RIGHT:
                 highlight++;
-                if (highlight == 6)
-                    highlight = 5;
+                if (highlight == 9)
+                    highlight = 8;
                 break;
             case ENTER_KEY:
                 wmove(MainInput, 2, 1);
