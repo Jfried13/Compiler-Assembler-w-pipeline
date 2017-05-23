@@ -46,7 +46,7 @@
 #define OUT 0x21
 #define PUTS 0x22
 
-// debug actions
+// debug actions 
 #define EXIT 9
 #define RUN 7
 #define EDIT 6

@@ -137,27 +137,33 @@ void MainInputWindow(CPU_p cpu) {
     char fileName[MAX_FILE_NAME];
     keypad(MainInput, true);
     box(MainInput, 0, 0);
-    char* choices[6] = {"Load", "Step", "Display Mem", "Switch View", "Run", "Exit"};
+    char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Bkpts", "Exit"};
     int choice, i = 0, garbage = 0;
     int highlight = 0;
     while (1){
         mvwprintw(MainInput, 1, 1, "Select: ");
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 9; i++) {
             if (i == highlight)
                 wattron(MainInput, A_REVERSE);
 
             if (i == 0)
                 mvwprintw(MainInput, 1, 9, choices[i]);
             if (i == 1)
-                mvwprintw(MainInput, 1, 16, choices[i]);
+                mvwprintw(MainInput, 1, 14, choices[i]);
             if (i == 2)
-                mvwprintw(MainInput, 1, 23, choices[i]);
+                mvwprintw(MainInput, 1, 19, choices[i]);
             if (i == 3)
-                mvwprintw(MainInput, 1, 37, choices[i]);
+                mvwprintw(MainInput, 1, 24, choices[i]);
             if (i == 4)
-                mvwprintw(MainInput, 1, 51, choices[i]);
+                mvwprintw(MainInput, 1, 34, choices[i]);
             if (i == 5)
-                mvwprintw(MainInput, 1, 57, choices[i]);
+                mvwprintw(MainInput, 1, 46, choices[i]);
+            if (i == 6)
+                mvwprintw(MainInput, 1, 51, choices[i]);
+            if (i == 7)
+                mvwprintw(MainInput, 1, 55, choices[i]);
+            if (i == 8)
+                mvwprintw(MainInput, 1, 65, choices[i]);
             wattroff(MainInput, A_REVERSE);
         }
         choice = wgetch(MainInput);
