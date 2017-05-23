@@ -163,36 +163,9 @@ int encounteredBreakPont(CPU_p cpu) {
 	return encountered; 
 }
 
-/*
-	This function takes a passed breakPoint and searches the existing collection of breakpoints.
-	If a match is found the breakPoint is removed from the collection. If a match isn't found the
-	breakPoint is added. 
-*/
-void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
-	int i;
-	int found = 0;
-	for(i = 0; i < MAX_BREAKPOINTS; i++) {
-		//User wants to remove this breakpoint
-		if (cpu->breakPoints[i] == breakPoint) {
-			//Set spot to available value, set found variable and exit the loop;
-			cpu->breakPoints[i] = AVAILABLE_BRKPT;
-			i = MAX_BREAKPOINTS;
-			found = 1;
-		}		
-	}
+
 	
-	//If this address doesn't exist find first available spot and add it to the collection of breakpoints
-	if(!found) {
-		for(i = 0; i < MAX_BREAKPOINTS; i++) {
-		//found the first open spot
-		if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
-			//Add in new break point and exit the loop;
-			cpu->breakPoints[i] = breakPoint;
-			i = MAX_BREAKPOINTS;
-		}		
-	}
-	}
-}
+
 /*
 	This is the main controller for the program. It takes a CPU struct and an int
 	which is being used as a boolean for displaying the screen.
@@ -450,50 +423,9 @@ void cpuInit(CPU_p cpu) {
 	cpu->breakPoints[3] = AVAILABLE_BRKPT;
 }
 
-//returns 1 if true 0 if false
-int checkIfFileExists(char* fileToCheckIfExists) {
-	FILE* filePtr;
-	filePtr = fopen(fileToCheckIfExists, "r+");
-	if(filePtr != NULL) {
-		fclose(filePtr);
-		return 1;
-	} else {
-		return 0;
-		fclose(filePtr);
-	}
-}
 
-//need to #define TRAP25 61477;
-void writeMemory(char * fileToWriteToName) {
-	FILE * filePtr;
-	int TRAP25 = 61477;
-	unsigned int memoryStart, memoryEnd; 
-	//the file exists so promt the user to see if they 
-	//are ok with overwritting the preexisting file right here
-	//include if/else statement to check user decision for overwriting
-	if(checkIfFileExists(fileToWriteToName)) {
 
-		filePtr = fopen(fileToWriteToName, "w");
-		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
-		}
-		fclose(filePtr);
 
-	//the file doesn't exist so create the new file and write to it
-	} else {
-		FILE * filePtr;
-		filePtr = fopen(fileToWriteToName, "w");
-		printf("Enter the beginning and end of the memory to save: ");
-		scanf("%4x %4x", &memoryStart, &memoryEnd);
-		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
-		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
-		}
-		fclose(filePtr);
-	}
-}
 
 
 /*

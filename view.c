@@ -44,7 +44,7 @@ int currentWindow = 0;
 #define CPUWidth 13
 
 void MainInputWindow();
-
+int checkIfFileExists(char* fileToCheckIfExists);
 
 void displayTitle() {
     mvwprintw(MainWindow, 0, 28, "Welcome to LC3 Simulator");
@@ -140,6 +140,7 @@ void MainInputWindow(CPU_p cpu) {
     char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Brkpts", "Exit"};
     int choice, i = 0, garbage = 0;
     int highlight = 0;
+	int loaded = 0;
     while (1){
         mvwprintw(MainInput, 1, 1, "Select: ");
         for (int i = 0; i < 9; i++) {
@@ -153,17 +154,17 @@ void MainInputWindow(CPU_p cpu) {
             if (i == 2)
                 mvwprintw(MainInput, 1, 21, choices[i]);
             if (i == 3)
-                mvwprintw(MainInput, 1, 28, choices[i]);
+                mvwprintw(MainInput, 1, 27, choices[i]);
             if (i == 4)
-                mvwprintw(MainInput, 1, 39, choices[i]);
+                mvwprintw(MainInput, 1, 38, choices[i]);
             if (i == 5)
-                mvwprintw(MainInput, 1, 52, choices[i]);
+                mvwprintw(MainInput, 1, 51, choices[i]);
             if (i == 6)
-                mvwprintw(MainInput, 1, 58, choices[i]);
+                mvwprintw(MainInput, 1, 57, choices[i]);
             if (i == 7)
-                mvwprintw(MainInput, 1, 53, choices[i]);
+                mvwprintw(MainInput, 1, 62, choices[i]);
             if (i == 8)
-                mvwprintw(MainInput, 1, 75, choices[i]);
+                mvwprintw(MainInput, 1, 73, choices[i]);
             wattroff(MainInput, A_REVERSE);
         }
         choice = wgetch(MainInput);
@@ -182,18 +183,26 @@ void MainInputWindow(CPU_p cpu) {
                 wmove(MainInput, 2, 1);
                 wclrtoeol(MainInput);
                 mvwprintw(MainInput, 2, 77, "|");
-                if (choices[highlight] == "Load") {
+                
+				if (choices[highlight] == "Load") {
                     mvwprintw(MainInput, 2, 1, "File Name:");
                     mvwscanw(MainInput, 2, 12, "%s", &fileName);
-					inputFile = fopen(fileName, "r");
-					fscanf(inputFile, "%04X", &garbage);
-					while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
-						if (!i) cpu->PC = memory[0];
-						i++;
-					}
+					if(checkIfFileExists(fileName)) {
+						inputFile = fopen(fileName, "r");
+						fscanf(inputFile, "%04X", &garbage);
+						while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
+							if (!i) cpu->PC = memory[0];
+							i++;
+						}
+					
                     mvwprintw(MainInput, 2, 35, "File name is:");
                     mvwprintw(MainInput, 2, 49, fileName);
+					loaded = 1;
 					MemWindow(0);
+					} else {
+						mvwprintw(MainInput, 2, 35, "Invalid File");
+					}
+						
                 }
                 if (choices[highlight] == "Exit") {
                     clear();
@@ -201,15 +210,32 @@ void MainInputWindow(CPU_p cpu) {
                     exit(0);
                 }
 				if (choices[highlight] == "Edit") {
+					mvwprintw(MainInput, 2, 1, "What memory address would you like to edit: ");
+					/* This is the logic from the old version, needs to be translated
+					scanf("%04x", &placeInMemory);
+					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - START_MEM + 1]);
+					printf("What would you like the new value in location %04x to be: ", placeInMemory);
+					scanf("%s", &newMemoryValue);
+					printf("%s\n", newMemoryValue);
+					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
+					memory[placeInMemory - START_MEM + 1] = newValue;
+					displayScreen(cpu, placeInMemory - START_MEM - 7);
                      mvwprintw(MainInput, 2, 1, "Edit Selected");
+					 */
                 }
 				if (choices[highlight] == "Save") {
                      mvwprintw(MainInput, 2, 1, "Save Selected");
                 }
 				
                 if (choices[highlight] == "Step") {
-                    mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
-					display(cpu, 0);
+					if(!loaded) {
+						mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
+						display(cpu, 0);
+					} else {
+						controller(cpu, 0);
+						display(cpu, 0);
+					}
+					
                 }
                 if (choices[highlight] == "Dsply_Mem") {
                     mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
@@ -255,5 +281,83 @@ void initializeWindow() {
     Pipeline = newwin(PHEIGHT,PWIDTH, 1, 15);
     CacheWindow = newwin(PHEIGHT,PWIDTH, 1, 15);
 }
+
+//returns 1 if true 0 if false
+int checkIfFileExists(char* fileToCheckIfExists) {
+	FILE* filePtr;
+	filePtr = fopen(fileToCheckIfExists, "r+");
+	if(filePtr != NULL) {
+		fclose(filePtr);
+		return 1;
+	} else {
+		return 0;
+		fclose(filePtr);
+	}
+}
+
+/*
+	This function takes a passed breakPoint and searches the existing collection of breakpoints.
+	If a match is found the breakPoint is removed from the collection. If a match isn't found the
+	breakPoint is added. 
+*/
+void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
+	int i;
+	int found = 0;
+	for(i = 0; i < MAX_BREAKPOINTS; i++) {
+		//User wants to remove this breakpoint
+		if (cpu->breakPoints[i] == breakPoint) {
+			//Set spot to available value, set found variable and exit the loop;
+			cpu->breakPoints[i] = AVAILABLE_BRKPT;
+			i = MAX_BREAKPOINTS;
+			found = 1;
+		}		
+	}
+	
+	//If this address doesn't exist find first available spot and add it to the collection of breakpoints
+	if(!found) {
+		for(i = 0; i < MAX_BREAKPOINTS; i++) {
+		//found the first open spot
+		if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
+			//Add in new break point and exit the loop;
+			cpu->breakPoints[i] = breakPoint;
+			i = MAX_BREAKPOINTS;
+		}		
+	}
+	}
+}
+
+//need to #define TRAP25 61477;
+void writeMemory(char * fileToWriteToName) {
+	FILE * filePtr;
+	int TRAP25 = 61477;
+	unsigned int memoryStart, memoryEnd; 
+	//the file exists so promt the user to see if they 
+	//are ok with overwritting the preexisting file right here
+	//include if/else statement to check user decision for overwriting
+	if(checkIfFileExists(fileToWriteToName)) {
+
+		filePtr = fopen(fileToWriteToName, "w");
+		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
+			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+		}
+		fclose(filePtr);
+
+	//the file doesn't exist so create the new file and write to it
+	} else {
+		FILE * filePtr;
+		filePtr = fopen(fileToWriteToName, "w");
+		printf("Enter the beginning and end of the memory to save: ");
+		scanf("%4x %4x", &memoryStart, &memoryEnd);
+		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
+		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
+			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+		}
+		fclose(filePtr);
+	}
+}
+
+
 
 
