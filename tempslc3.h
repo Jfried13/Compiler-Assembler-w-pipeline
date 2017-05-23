@@ -50,7 +50,7 @@
 #define EXIT 9
 #define RUN 7
 #define EDIT 6
-#define DISP_MEM 5
+#define DISP_MEM 4
 #define STEP 3
 #define SAVE 2
 #define LOAD 1

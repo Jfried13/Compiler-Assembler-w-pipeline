@@ -137,7 +137,7 @@ void MainInputWindow(CPU_p cpu) {
     char fileName[MAX_FILE_NAME];
     keypad(MainInput, true);
     box(MainInput, 0, 0);
-    char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Bkpts", "Exit"};
+    char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Brkpts", "Exit"};
     int choice, i = 0, garbage = 0;
     int highlight = 0;
     while (1){
@@ -149,21 +149,21 @@ void MainInputWindow(CPU_p cpu) {
             if (i == 0)
                 mvwprintw(MainInput, 1, 9, choices[i]);
             if (i == 1)
-                mvwprintw(MainInput, 1, 14, choices[i]);
+                mvwprintw(MainInput, 1, 15, choices[i]);
             if (i == 2)
-                mvwprintw(MainInput, 1, 19, choices[i]);
+                mvwprintw(MainInput, 1, 21, choices[i]);
             if (i == 3)
-                mvwprintw(MainInput, 1, 24, choices[i]);
+                mvwprintw(MainInput, 1, 28, choices[i]);
             if (i == 4)
-                mvwprintw(MainInput, 1, 34, choices[i]);
+                mvwprintw(MainInput, 1, 39, choices[i]);
             if (i == 5)
-                mvwprintw(MainInput, 1, 46, choices[i]);
+                mvwprintw(MainInput, 1, 52, choices[i]);
             if (i == 6)
-                mvwprintw(MainInput, 1, 51, choices[i]);
+                mvwprintw(MainInput, 1, 58, choices[i]);
             if (i == 7)
-                mvwprintw(MainInput, 1, 55, choices[i]);
+                mvwprintw(MainInput, 1, 53, choices[i]);
             if (i == 8)
-                mvwprintw(MainInput, 1, 65, choices[i]);
+                mvwprintw(MainInput, 1, 75, choices[i]);
             wattroff(MainInput, A_REVERSE);
         }
         choice = wgetch(MainInput);
@@ -175,8 +175,8 @@ void MainInputWindow(CPU_p cpu) {
                 break;
             case KEY_RIGHT:
                 highlight++;
-                if (highlight == 6)
-                    highlight = 5;
+                if (highlight == 9)
+                    highlight = 8;
                 break;
             case ENTER_KEY:
                 wmove(MainInput, 2, 1);
@@ -200,16 +200,23 @@ void MainInputWindow(CPU_p cpu) {
                     endwin();
                     exit(0);
                 }
+				if (choices[highlight] == "Edit") {
+                     mvwprintw(MainInput, 2, 1, "Edit Selected");
+                }
+				if (choices[highlight] == "Save") {
+                     mvwprintw(MainInput, 2, 1, "Save Selected");
+                }
+				
                 if (choices[highlight] == "Step") {
                     mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
 					display(cpu, 0);
                 }
-                if (choices[highlight] == "Display Mem") {
+                if (choices[highlight] == "Dsply_Mem") {
                     mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
 					display(cpu, 0);
 
                 }
-                if (choices[highlight] == "Switch View") {
+                if (choices[highlight] == "Switch_View") {
                     if (currentWindow == 0) {
                         DisplayCacheWindow();
                         mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
@@ -218,6 +225,11 @@ void MainInputWindow(CPU_p cpu) {
                         mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
                     }
                 }
+				
+				 if (choices[highlight] == "Set_Brkpts") {
+                    mvwprintw(MainInput, 2, 1, "Reached stbrk");
+                }
+				
                 if (choices[highlight] == "Run") {
                     mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
 					controller(cpu, 1);
