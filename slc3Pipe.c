@@ -90,7 +90,7 @@ void setCC(CPU_p cpu, Register Rd) {
 /*
 	This is the dialog function that provides the functionality to the choices shown in
 	the display.
-*/
+
 int dialog(CPU_p cpu) {
     int opNum = 0;
     char fileName[MAX_FILE_NAME];
@@ -146,7 +146,7 @@ int dialog(CPU_p cpu) {
                 break;
         }
     }
-}
+}*/
 
 /*
 	This method compares the current value of PC against any breakpoints entered by the user. 

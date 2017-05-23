@@ -96,7 +96,6 @@
 
 #define MAX_MEMORY 500
 
-
 unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 
 
@@ -132,5 +131,11 @@ typedef struct CPU_s{
 	unsigned short breakPoints[MAX_BUFFERS];
 	struct BUFFER buffers[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;
+
+
+int controller(CPU_p, int);
+
+
+
 
 #endif

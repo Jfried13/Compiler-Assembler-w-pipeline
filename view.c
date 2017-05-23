@@ -99,7 +99,7 @@ void CPUwindow(CPU_p cpu) {
 
 
 
-void DisplayPiplineWindow(CPU_p cpu) {
+void DisplayPipelineWindow(CPU_p cpu) {
     currentWindow = 0;
     box(Pipeline, 0, 0);
     mvwprintw(Pipeline, 0, 15, "PipeLine Info:");
@@ -126,18 +126,19 @@ void display(CPU_p cpu, int mem) {
     RegWindow(cpu);
     MemWindow(mem);
     CPUwindow(cpu);
-    DisplayPiplineWindow(cpu);
+    DisplayPipelineWindow(cpu);
     IOwindow();
     MainInputWindow(cpu);
     refresh();
 }
 
 void MainInputWindow(CPU_p cpu) {
+	FILE *inputFile;
     char fileName[MAX_FILE_NAME];
     keypad(MainInput, true);
     box(MainInput, 0, 0);
     char* choices[6] = {"Load", "Step", "Display Mem", "Switch View", "Run", "Exit"};
-    int choice;
+    int choice, i = 0, garbage = 0;
     int highlight = 0;
     while (1){
         mvwprintw(MainInput, 1, 1, "Select: ");
@@ -178,8 +179,15 @@ void MainInputWindow(CPU_p cpu) {
                 if (choices[highlight] == "Load") {
                     mvwprintw(MainInput, 2, 1, "File Name:");
                     mvwscanw(MainInput, 2, 12, "%s", &fileName);
+					inputFile = fopen(fileName, "r");
+					fscanf(inputFile, "%04X", &garbage);
+					while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
+						if (!i) cpu->PC = memory[0];
+						i++;
+					}
                     mvwprintw(MainInput, 2, 35, "File name is:");
                     mvwprintw(MainInput, 2, 49, fileName);
+					MemWindow(0);
                 }
                 if (choices[highlight] == "Exit") {
                     clear();
@@ -188,21 +196,28 @@ void MainInputWindow(CPU_p cpu) {
                 }
                 if (choices[highlight] == "Step") {
                     mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
+					display(cpu, 0);
                 }
                 if (choices[highlight] == "Display Mem") {
                     mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
+					display(cpu, 0);
+
                 }
                 if (choices[highlight] == "Switch View") {
                     if (currentWindow == 0) {
                         DisplayCacheWindow();
                         mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
                     } else {
-                        DisplayPiplineWindow(cpu);
+                        DisplayPipelineWindow(cpu);
                         mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
                     }
                 }
                 if (choices[highlight] == "Run") {
                     mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
+					controller(cpu, 1);
+					display(cpu, 0);
+
+
                 }
                 break;
             default:
