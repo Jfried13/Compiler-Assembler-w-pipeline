@@ -501,7 +501,7 @@ int controller (CPU_p cpu, int isRunning) {
 				//printBuffer(cpu->buffers[1]);
                 switch (cpu->buffers[1].Opcode) {							//Evaluate Address Stage
 					case LDR:
-						//printf("LDR\n");
+						printf("LDR\n");
 						//printf("%04X = (%04X + %04X) - %d\n", (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL, cpu->r[BaseR], sext6(cpu->buffers[1].SEXT), CONVERT_TO_DECIMAL);
 						cpu->MAR = (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL;
 						break;
@@ -537,7 +537,8 @@ int controller (CPU_p cpu, int isRunning) {
                 switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
 					case LDR:
 					case LD:
-						//printf("LD/LDR\n");
+						printf("LD/LDR\n");
+						printf("%04X\n", cpu->MAR);
 						cpu->MDR = memory[cpu->MAR];
 						break;
 					case LDI:
