@@ -560,7 +560,6 @@ int controller (CPU_p cpu, int isRunning) {
 					case AND:
 						//printf("AND\n");
 						if(HIGH_ORDER_BIT_VALUE6 & cpu->buffers[1].IR){ //0000|0000|0010|0000
-							printf("%i\n", cpu->bluffers[1].A]);
 							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
 							cpu->buffers[1].B = (cpu->buffers[1].SEXT & SEXT5_MASK);
 						} else{
