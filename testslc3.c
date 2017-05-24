@@ -453,31 +453,43 @@ int controller (CPU_p cpu, int isRunning) {
 				BaseR = (cpu->buffers[0].IR & BASE_MASK) >> SR_SHIFT;
 				printf("here\n");
 				//IDRR Buffer
-				
+				printf ("%d\n", cpu->buffers[1].Opcode == NOP);
+				printf ("%d\n", cpu->buffers[1].Opcode);
                 switch (cpu->buffers[1].Opcode) {							//Evaluate Address Stage
 					case LDR:
+						printf("LDR\n");
+						printf("%04X = (%04X + %04X) - %d\n", (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL, cpu->r[BaseR], sext6(immed_offset), CONVERT_TO_DECIMAL);
 						cpu->MAR = (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL;
 						break;
 					case LD:
+						printf("LD\n");
 						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
 					case LDI:
+						printf("LDI\n");
 						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
 					case ST:
+						printf("ST\n");
 						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
 					case STR:
+						printf("STR\n");
 						cpu->MAR = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset);
 						break;
 					case STI:
+						printf("STI\n");
 						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
 					case TRAP:
+						printf("TRAP\n");
 						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
 						break;
+					case NOP:
+						printf("NOP\n");
+						break;
                 }
-				printf("here1\n");
+
                 switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
 					case LDR:
 					case LD:
@@ -515,7 +527,7 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case STR:
 					case ST:
-						printf("ST\n");
+						printf("ST/STR\n");
 						cpu->MDR = cpu->r[cpu->buffers[1].Rd];
 						break;
 					case STI:
@@ -526,7 +538,9 @@ int controller (CPU_p cpu, int isRunning) {
 						printf("TRAP\n");
 						cpu->MDR = memory[cpu->MAR];
 						cpu->r[7] = cpu->buffers[1].PC;
+						break;
 					case NOP:
+						printf("NOP\n");
 						break;
                 }
 				
