@@ -2,21 +2,21 @@
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include "slc3.h"
+#include <curses.h>
+#include "view.c"
 
 int controller (CPU_p, int);
 
-int displayScreen (CPU_p, int);
-
-int dialog (CPU_p cpu);
-
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
+
+void writeMemory(char * fileToWriteToName);
 
 
 // you can define a simple memory module here for this program
-unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
+//unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
+
 
 /*
 	This function is the offset6 sign extender.
@@ -44,27 +44,24 @@ int trap(CPU_p cpu, int trap_vector) {
 	char temp;
 	switch (trap_vector) {
 		case GETC:
-			//printw("in GETC ");
 			value = (int) getch();
 			break;
 		case OUT:
-			//printw("%d", cpu->gotC);
+			printf("%c", cpu->gotC);
 			break;
 		case PUTS:
-			//printw("in PUTS\n");
 			i = 0;
 			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			while ((temp)) {  
-				printw("%c", (temp));
-				i++;
-				temp = (char) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+			  printf("%c", (temp));
+			  i++;
+			  temp = memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			}
 			break;
 		case HALT:
 			value = 1;
 			break;
-        default:break;
-    }
+	}
 	
 	return value;
 }
@@ -97,63 +94,26 @@ void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos)
 
 
 /*
-	This function displays the debug screen with LOAD, STEP, DISPLAY MEM, RUN, or EXIT
-	commands to use.
-*/
-int displayScreen(CPU_p cpu, int mem) {
-
-    clear();
-
-    printw("\n\n\n");
-	printw("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
-	printw("\t\tRegisters \t\t    Memory\n");
-	int i = START_MEM + mem;
-	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
-
-	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[2 + mem]);
-	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
-	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
-	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
-	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
-	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
-	printw("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
-
-	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	printw("\t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
-	printw("\t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
-	printw("\t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
-	printw("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[12 + mem]);
-	printw("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[13 + mem]);
-	printw("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
-	printw("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
-	printw("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
-	printw("  Select: 1)Load, 3)Step, 5)Display Mem, 7)Run, 9)Exit\n");
-
-    //dialog(cpu);
-    refresh();
-	return 0;
-}
-
-
-/*
 	This is the dialog function that provides the functionality to the choices shown in
 	the displayScreen.
 */
 int dialog(CPU_p cpu) {
-    int opNum = 0;
+	int opNum = 0, isRunning = 0;
+	unsigned int placeInMemory;
+	unsigned short newValue; 
+	char newMemoryValue[4];
+	char * charPtr;
 	char fileName[MAX_FILE_NAME];
 	FILE* inputFile;
 		while (opNum != EXIT) {
-            printw("\nInput: ");
-            scanw("%d", &opNum);
-            printw("\n=============================================================\n");
+			scanf("%d", &opNum);
 			switch (opNum) {
 				case LOAD:
-					printw("File Name: ");
-					scanw("%s", &fileName);
+					printf("File Name: ");
+					scanf("%s", &fileName);
 					inputFile = fopen(fileName, "r");
 					if (inputFile == NULL) {
-						printw("DIDN'T OPEN");
+						printf("DIDN'T OPEN");
 						break;
 					}
 					int i = 0;
@@ -164,45 +124,101 @@ int dialog(CPU_p cpu) {
 						i++;
 					}
 					isLoaded = 1;
-					displayScreen(cpu, 0);
+					//displayScreen(cpu, 0);
 					fclose(inputFile);
+					break;
+				case SAVE:
+					printf("Enter a file name to save to: ");
+					scanf("%s", &fileName);
+					writeMemory(fileName);
+					//displayScreen(cpu, 0);
 					break;
 				case STEP:
 					if (isLoaded == 1) {
 						controller(cpu, 0);
 						opNum = 0;
 					} else {
-						printw("No file loaded!");
+						printf("No file loaded!");
 					}
 					break;
 				case DISP_MEM:
-					printw("Position to move to? (in decimal): ");
-
-					scanw("%d", &memShift);
-					if(memShift > MAX_MEMORY - DISP_BOUNDARY) {
-						printw("Error: out of memory");
+					printf("Position to move to? (in hex): ");
+					scanf("%4x", &memShift);
+					if(memShift - START_MEM > MAX_MEMORY - DISP_BOUNDARY) {
+						printf("Error: out of memory");
 						memShift = 0;
 						break;
 					} else {
-						displayScreen(cpu, memShift);
+						//displayScreen(cpu, memShift - START_MEM);
 					}
+					break;
+				case EDIT:
+					printf("What memory address would you like to edit: ");
+					scanf("%04x", &placeInMemory);
+					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - START_MEM + 1]);
+					printf("What would you like the new value in location %04x to be: ", placeInMemory);
+					scanf("%s", &newMemoryValue);
+					printf("%s\n", newMemoryValue);
+					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
+					memory[placeInMemory - START_MEM + 1] = newValue;
+					//displayScreen(cpu, placeInMemory - START_MEM - 7);
 					break;
 				case RUN:
 					controller(cpu, 1);
-					displayScreen(cpu, 0);
+					//displayScreen(cpu, 0);
 					break;
 				case EXIT:
-					printw("Simulation Terminated.");
-                    endwin();
+					printf("Simulation Terminated.");
 					break;
-                default:break;
-            }
+			}
 		}
-    return 0;
 }
 
+/*
+	This method compares the current value of PC against any breakpoints entered by the user. 
+*/
+int encounteredBreakPont(CPU_p cpu) {
+		int encountered = 0;
+		int i;
+		for (i = 0; i < MAX_BREAKPOINTS; i++) {
+			if(cpu->PC == cpu->breakPoints[i]) {
+				encountered = 1;
+				i = MAX_BREAKPOINTS;
+			}
+		}
+		return encountered; 
+}
 
-
+/*
+	This function takes a passed breakPoint and searches the existing collection of breakpoints.
+	If a match is found the breakPoint is removed from the collection. If a match isn't found the
+	breakPoint is added. 
+*/
+void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
+	int i;
+	int found = 0;
+	for(i = 0; i < MAX_BREAKPOINTS; i++) {
+		//User wants to remove this breakpoint
+		if (cpu->breakPoints[i] == breakPoint) {
+			//Set spot to available value, set found variable and exit the loop;
+			cpu->breakPoints[i] = AVAILABLE_BRKPT;
+			i = MAX_BREAKPOINTS;
+			found = 1;
+		}		
+	}
+	
+	//If this address doesn't exist find first available spot and add it to the collection of breakpoints
+	if(!found) {
+		for(i = 0; i < MAX_BREAKPOINTS; i++) {
+		//found the first open spot
+		if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
+			//Add in new break point and exit the loop;
+			cpu->breakPoints[i] = breakPoint;
+			i = MAX_BREAKPOINTS;
+		}		
+	}
+	}
+}
 /*
 	This is the main controller for the program. It takes a CPU struct and an int
 	which is being used as a boolean for displaying the screen.
@@ -210,48 +226,52 @@ int dialog(CPU_p cpu) {
 int controller (CPU_p cpu, int isRunning) {
 	unsigned int state;
 	short cc;
-	unsigned int opcode = 0, Rd = 0, Rs1 = 0, Rs2 = 0, immed_offset = 0, BaseR = 0;	// fields for the IR
+	unsigned int opcode, Rd, Rs1, Rs2, immed_offset, BaseR;	// fields for the IR
 	char charToPrint = ' ';
+	char *temp;
 	int value = 0;
     state = FETCH;
+	int j;
 	
+	if(isRunning && encounteredBreakPont(cpu)) {
+		isRunning = 0;
+	}
     for (;;) {
         switch (state) {
             case FETCH: // microstates 18, 33, 35 in the book
-            	 cpu->MAR = (Register) (cpu->PC - CONVERT_TO_DECIMAL);
+            	 cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
             	 cpu->PC++;	// increment PC
             	 cpu->MDR = memory[cpu->MAR];
             	 cpu->ir = cpu->MDR;
-            	 //cc = 0;
+            	 cc = 0;
                state = DECODE;
             case DECODE:
 				opcode = cpu->ir >> OPCODE_SHIFT;
-				Rd = (unsigned int) (cpu->ir & DR_MASK);
-				Rd = (unsigned int) ((short)Rd >> DR_SHIFT);
-				Rs1 = (unsigned int) (cpu->ir & SR_MASK);
-				Rs1 = (unsigned int) ((short)Rs1 >> SR_SHIFT);
-				Rs2 = (unsigned int) (cpu->ir & SR2_MASK);
-				immed_offset = (unsigned int) (cpu->ir & SR_MASK);
-				BaseR = (unsigned int) ((cpu->ir & BASE_MASK) >> SR_SHIFT);
+				Rd = cpu->ir & DR_MASK;
+				Rd = (short)Rd >> DR_SHIFT;
+				Rs1 = cpu->ir & SR_MASK;
+				Rs1 = (short)Rs1 >> SR_SHIFT;
+				Rs2 = cpu->ir & SR2_MASK;
+				immed_offset = cpu->ir & SR_MASK;
+				BaseR = (cpu->ir & BASE_MASK) >> SR_SHIFT;
                 state = EVAL_ADDR;
             case EVAL_ADDR: // Look at the LD instruction to see microstate 2 example
                 switch (opcode) {
 					case LDR:
-						cpu->MAR = (Register) ((cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL);
+						cpu->MAR = (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL;
 						break;
 					case LD:
-						cpu->MAR = (Register) ((cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset));
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
 					case ST:
-						cpu->MAR = (Register) ((cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset));
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
 					case STR:
-						cpu->MAR = (Register) ((cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset));
+						cpu->MAR = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset);
 						break;
 					case TRAP:
-						cpu->MAR = (Register) (immed_offset & TRAP_VECTOR_MASK);
+						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
 						break;
-                    default:break;
                 }
                 state = FETCH_OP;
             case FETCH_OP: // Look at ST. Microstate 23 example of getting a value out of a register
@@ -263,7 +283,7 @@ int controller (CPU_p cpu, int isRunning) {
 					case ADD:
 						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
 							cpu->A = cpu->r[Rs1];
-							cpu->B = (Register) (immed_offset & SEXT5_MASK);
+							cpu->B = (immed_offset & SEXT5_MASK);
 						} else{
 							cpu->A = cpu->r[Rs1];
 							cpu->B = cpu->r[Rs2];
@@ -273,7 +293,7 @@ int controller (CPU_p cpu, int isRunning) {
 					case AND:
 					if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
 							cpu->A = cpu->r[Rs1];
-							cpu->B = (Register) (immed_offset & SEXT5_MASK);
+							cpu->B = (immed_offset & SEXT5_MASK);
 						} else{
 							cpu->A = cpu->r[Rs1];
 							cpu->B = cpu->r[Rs2];
@@ -289,18 +309,17 @@ int controller (CPU_p cpu, int isRunning) {
 					case TRAP:
 						cpu->MDR = memory[cpu->MAR];
 						cpu->r[7] = cpu->PC;
-                    default:break;
                 }
                 state = EXECUTE;
             case EXECUTE: // Note that ST does not have an execute microstate
                 switch (opcode) {
 					case ADD:
 						if (cpu->A < 0) {
-							cpu->Res = (Register) (-(cpu->A) + (cpu->B));
+							cpu->Res = -(cpu->A) + (cpu->B);
 						} else if (cpu->B < 0) {
 							cpu->Res = (cpu->A) -(cpu->B);
 						} else if ((cpu->A < 0) & (cpu->B < 0)) {
-							cpu->Res = (Register) (-(cpu->A) - (cpu->B));
+							cpu->Res = -(cpu->A) -(cpu->B);
 						} else {
 							cpu->Res = (cpu->A) + (cpu->B);
 						}
@@ -331,9 +350,9 @@ int controller (CPU_p cpu, int isRunning) {
 						if (value == 1) {
 							return 0;
 						} else if (value > 1) {
-							cpu->r[0] = (Register) (char) value;
+							cpu->r[0] = (char) value;
 							cpu->gotC = (char) value;
-							cpu->r[Rd] = (Register) value;
+							cpu->r[Rd] = value;
 						}
 						break;
 					case JSRR:
@@ -346,19 +365,18 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case BR:
 						if (cpu->N && (Rd & 4)) {
-							cpu->PC = (Register) (cpu->PC + sext9(immed_offset));
+							cpu->PC = cpu->PC + sext9(immed_offset);
 							break;
 						}
 						if (cpu->Z && (Rd & 2)) {
-							cpu->PC = (Register) (cpu->PC + sext9(immed_offset));
+							cpu->PC = cpu->PC + sext9(immed_offset);
 							break;
 						}
 						if (cpu->P && (Rd & 1)) {
-							cpu->PC = (Register) (cpu->PC + sext9(immed_offset));
+							cpu->PC = cpu->PC + sext9(immed_offset);
 							break;
 						}
 					break;
-                    default:break;
                 }
                 state = STORE;
             case STORE: // Look at ST. Microstate 16 is the store to memory
@@ -380,7 +398,7 @@ int controller (CPU_p cpu, int isRunning) {
 						chooseFlag (cpu, cc);
 						break;
 					case LEA:
-						cpu->r[Rd] = (Register) (cpu->PC + sext9(immed_offset));
+						cpu->r[Rd] = cpu->PC + sext9(immed_offset);
 						cc = cpu->r[Rd];
 						chooseFlag (cpu, cc);
 						break;
@@ -388,15 +406,13 @@ int controller (CPU_p cpu, int isRunning) {
 					case ST:
 						memory[cpu->MAR] = cpu->MDR;
 						break;
-                    default:break;
-                }
+	                }
                 state = FETCH;
                 break;
-            default:break;
         }
 		if (!isRunning) {
-			displayScreen(cpu, 0);
-			scanw("%c", &charToPrint);
+			//displayScreen(cpu, 0);
+			scanf("%c", &charToPrint);
 		}
     }
 }
@@ -423,21 +439,68 @@ void cpuInit(CPU_p cpu) {
 	cpu->N = 0;
 	cpu->Z = 0;
 	cpu->P = 0;
-
+	cpu->breakPoints[0] = AVAILABLE_BRKPT;
+	cpu->breakPoints[1] = AVAILABLE_BRKPT;
+	cpu->breakPoints[2] = AVAILABLE_BRKPT;
+	cpu->breakPoints[3] = AVAILABLE_BRKPT;
 }
 
+//returns 1 if true 0 if false
+int checkIfFileExists(char* fileToCheckIfExists) {
+	FILE* filePtr;
+	filePtr = fopen(fileToCheckIfExists, "r+");
+	if(filePtr != NULL) {
+		fclose(filePtr);
+		return 1;
+	} else {
+        fclose(filePtr);
+		return 0;
+	}
+}
+
+//need to #define TRAP25 61477;
+void writeMemory(char * fileToWriteToName) {
+	FILE * filePtr;
+	int TRAP25 = 61477;
+	unsigned int memoryStart, memoryEnd; 
+	//the file exists so promt the user to see if they 
+	//are ok with overwritting the preexisting file right here
+	//include if/else statement to check user decision for overwriting
+	if(checkIfFileExists(fileToWriteToName)) {
+
+		filePtr = fopen(fileToWriteToName, "w");
+		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
+			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+		}
+		fclose(filePtr);
+
+	//the file doesn't exist so create the new file and write to it
+	} else {
+		FILE * filePtr;
+		filePtr = fopen(fileToWriteToName, "w");
+		printf("Enter the beginning and end of the memory to save: ");
+		scanf("%4x %4x", &memoryStart, &memoryEnd);
+		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
+		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
+			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+		}
+		fclose(filePtr);
+	}
+}
 
 /*
 	This is the main function that starts the program off.
 */
 int main(int argc, char* argv[]){
-    initscr();
+
 	setvbuf(stdout, NULL, _IONBF, 0);
 	isLoaded = 0;
 	memShift = 0;
 	CPU_p cpu = malloc(sizeof(CPU_s));
 	cpuInit(cpu);
-	displayScreen(cpu, memShift);
-	dialog(cpu);
+    initializeWindow();
+    display(cpu, memShift);
 	return 0;
 }

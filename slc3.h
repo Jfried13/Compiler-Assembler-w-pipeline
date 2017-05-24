@@ -77,7 +77,7 @@
 
 #define MAX_MEMORY 500
 
-extern unsigned short memory[MAX_MEMORY];
+unsigned short memory[MAX_MEMORY];
 
 typedef unsigned short Register;
 //cpu a b res mar mdr
