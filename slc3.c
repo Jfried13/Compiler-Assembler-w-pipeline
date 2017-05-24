@@ -222,7 +222,7 @@ int dialog(CPU_p cpu) {
 				case EDIT:
 					printf("What memory address would you like to edit: ");
 					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory - START_MEM + 1, memory[placeInMemory - START_MEM + 1]);
+					printf("The contents of location %04x is  %04x\n", placeInMemory - START_MEM + 1c, memory[placeInMemory - START_MEM + 1]);
 					printf("What would you like the new value in location %04x to be: ", placeInMemory);
 					scanf("%s", &newMemoryValue);
 					printf("%s\n", newMemoryValue);
