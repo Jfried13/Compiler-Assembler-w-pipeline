@@ -112,7 +112,6 @@ void DisplayPipelineWindow(CPU_p cpu) {
 	mvwprintw(Pipeline, 6, 4, "DBUFF: Op:  DR:  SR1:  SEXT/SR2:");
 	mvwprintw(Pipeline, 7, 11, "0x%X  0x%X  0x%X   0x%X", cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B);
 	mvwprintw(Pipeline, 9, 4, "EBUFF: Op:  DR:  RESULT:");
-    printw("lhello");
 	mvwprintw(Pipeline, 10, 11, "0x%X  0x%X  0x%X", cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].B);
 	mvwprintw(Pipeline, 12, 4, "MBUFF: Op:  DR:  RESULT:");
 	mvwprintw(Pipeline, 13, 11, "0x%X  0x%X  0x%X", cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].B);
@@ -135,6 +134,94 @@ void display(CPU_p cpu, int mem) {
     IOwindow();
     MainInputWindow(cpu);
     refresh();
+}
+
+void loadFile() {
+    mvwprintw(MainInput, 2, 1, "File Name:");
+    mvwscanw(MainInput, 2, 12, "%s", &fileName);
+    if(checkIfFileExists(fileName)) {
+        inputFile = fopen(fileName, "r");
+        fscanf(inputFile, "%04X", &garbage);
+        while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
+            if (!i) cpu->PC = memory[0];
+            i++;
+        }
+
+        mvwprintw(MainInput, 2, 35, "File name is:");
+        mvwprintw(MainInput, 2, 49, fileName);
+        loaded = 1;
+        MemWindow(0);
+    } else {
+        mvwprintw(MainInput, 2, 35, "Invalid File");
+    }
+}
+
+void exit() {
+    clear();
+    endwin();
+    exit(0);
+}
+
+void edit() {
+    char newMemoryValue[6];
+    unsigned short placeInMemory, newValue;
+    mvwprintw(MainInput, 2, 1, "What memory address would you like to edit:");
+    mvwscanw(MainInput, 2, 44, "%04x", &placeInMemory);
+    mvwprintw(MainInput, 2, 1, "The contents of location x%04x is x%04x", placeInMemory, memory[placeInMemory - START_MEM]);
+    mvwprintw(MainInput, 2, 1, "What would you like the new value to be in location x%04x:", placeInMemory);
+    mvwscanw(MainInput, 2, 59, "%s", &newMemoryValue);
+    newValue = (short)strtol(newMemoryValue, &ptr, 16);
+    memory[placeInMemory - START_MEM] = newValue;
+    MemWindow(0);
+}
+
+void save() {
+    //mvwprintw(MainInput, 2, 1, "Save Selected");
+    FILE *filePtr;
+    //char *ptr;
+    char begNum[4];
+    char endNum[4];
+    long beg, end;
+    unsigned int memoryStart;
+    mvwprintw(MainInput, 2, 1, "File Name:");
+    mvwscanw(MainInput, 2, 12, "%s", &fileName);
+    mvwprintw(MainInput, 2, 20, "File to save:");
+    writeMemory(fileName);
+}
+
+void step() {
+    if(!loaded) {
+        mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
+        display(cpu, 0);
+    } else {
+        controller(cpu, 0);
+        display(cpu, 0);
+    }
+}
+
+void displayMemory() {
+    mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
+    display(cpu, 0);
+}
+
+void switchView() {
+    if (currentWindow == 0) {
+        DisplayCacheWindow();
+        mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
+    } else {
+        DisplayPipelineWindow(cpu);
+        mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
+    }
+}
+
+void setBrakepoints() {
+    mvwprintw(MainInput, 2, 1, "Reached stbrk");
+}
+
+void run() {
+    mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
+    controller(cpu, 1);
+    display(cpu, 0);
 }
 
 void MainInputWindow(CPU_p cpu) {
@@ -192,94 +279,42 @@ void MainInputWindow(CPU_p cpu) {
                 mvwprintw(MainInput, 2, 77, "|");
                 
 				if (choices[highlight] == "Load") {
-                    mvwprintw(MainInput, 2, 1, "File Name:");
-                    mvwscanw(MainInput, 2, 12, "%s", &fileName);
-					if(checkIfFileExists(fileName)) {
-						inputFile = fopen(fileName, "r");
-						fscanf(inputFile, "%04X", &garbage);
-						while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
-							if (!i) cpu->PC = memory[0];
-							i++;
-						}
-					
-                    mvwprintw(MainInput, 2, 35, "File name is:");
-                    mvwprintw(MainInput, 2, 49, fileName);
-					loaded = 1;
-					MemWindow(0);
-					} else {
-						mvwprintw(MainInput, 2, 35, "Invalid File");
-					}
-						
+                    loadFile();
                 }
                 if (choices[highlight] == "Exit") {
-                    clear();
-                    endwin();
-                    exit(0);
+                    exit();
+
                 }
                 //The only thing that this needs is for user to be able to input the memory location with x in front
                 //and to also re display the memory so the new memory locations is centered in the displayed memory
 				if (choices[highlight] == "Edit") {
-                    char newMemoryValue[6];
-                    unsigned short placeInMemory, newValue;
-					mvwprintw(MainInput, 2, 1, "What memory address would you like to edit:");
-                    mvwscanw(MainInput, 2, 44, "%04x", &placeInMemory);
-                    mvwprintw(MainInput, 2, 1, "The contents of location x%04x is x%04x", placeInMemory, memory[placeInMemory - START_MEM]);
-                    mvwprintw(MainInput, 2, 1, "What would you like the new value to be in location x%04x:", placeInMemory);
-                    mvwscanw(MainInput, 2, 59, "%s", &newMemoryValue);
-                    newValue = (short)strtol(newMemoryValue, &ptr, 16);
-                    memory[placeInMemory - START_MEM] = newValue;
-                    MemWindow(0);
+                    edit();
 					
                 }
 				if (choices[highlight] == "Save") {
-                     //mvwprintw(MainInput, 2, 1, "Save Selected");
-                     FILE *filePtr;
-                     //char *ptr;
-                     char begNum[4];
-                     char endNum[4];
-                     long beg, end;
-                     unsigned int memoryStart;
-                     mvwprintw(MainInput, 2, 1, "File Name:");
-                     mvwscanw(MainInput, 2, 12, "%s", &fileName);
-                     mvwprintw(MainInput, 2, 20, "File to save:");
-                     writeMemory(fileName);
+                    save();
+
                 }
 				
                 if (choices[highlight] == "Step") {
-					if(!loaded) {
-						mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
-						display(cpu, 0);
-					} else {
-						controller(cpu, 0);
-						display(cpu, 0);
-					}
+                    step();
 					
                 }
                 if (choices[highlight] == "Dsply_Mem") {
-                    mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
-					display(cpu, 0);
+                    displayMemory();
 
                 }
                 if (choices[highlight] == "Switch_View") {
-                    if (currentWindow == 0) {
-                        DisplayCacheWindow();
-                        mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
-                    } else {
-                        DisplayPipelineWindow(cpu);
-                        mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
-                    }
+                    switchView();
                 }
 				
 				 if (choices[highlight] == "Set_Brkpts") {
-                    mvwprintw(MainInput, 2, 1, "Reached stbrk");
+                     setBrakepoints();
+
                 }
 				
                 if (choices[highlight] == "Run") {
-                    mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
-					controller(cpu, 1);
-					display(cpu, 0);
-
-
+                    run();
                 }
                 break;
             default:
@@ -389,6 +424,7 @@ void writeMemory(char * nameOfFileToWriteTo) {
         mvwprintw(MainInput, 2, 1, endNum);
         int beg = strtol(begNum, &ptr, 10) - 3000;
         int end = strtol(endNum, &ptr, 10) - 3000;
+
         for(int i=beg; i <= end; i++) { 
             fprintf(filePtr, "%04x\n", memory[i]);
         }
