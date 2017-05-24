@@ -2,7 +2,7 @@
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include "testingh.h"
+#include "tempslc3.h"
 
 int controller (CPU_p, int);
 
@@ -302,7 +302,7 @@ int controller (CPU_p cpu, int isRunning) {
 	char charToPrint = ' ';
 	char *temp;
 	int value = 0;
-    state = FETCH;
+    state = STORE;
 	int j;
 	
 	if(isRunning && encounteredBreakPont(cpu)) {

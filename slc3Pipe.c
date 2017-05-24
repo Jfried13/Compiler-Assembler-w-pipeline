@@ -385,6 +385,5 @@ int main() {
     cpuInit(cpu);
     initializeWindow();
     display(cpu, memShift);
-    endwin();
 	return 0;
 }
