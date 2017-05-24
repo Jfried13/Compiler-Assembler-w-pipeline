@@ -86,68 +86,6 @@ void setCC(CPU_p cpu, Register Rd) {
 	}
 }
 
-
-/*
-	This is the dialog function that provides the functionality to the choices shown in
-	the display.
-
-int dialog(CPU_p cpu) {
-    int opNum = 0;
-    char fileName[MAX_FILE_NAME];
-    FILE* inputFile;
-    while (opNum != EXIT) {
-        opNum = getch();
-        scanw("%d", &opNum);
-        switch (opNum) {
-            case LOAD:
-                printw("File Name: ");
-                scanw("%s", &fileName);
-                inputFile = fopen(fileName, "r");
-                if (inputFile == NULL) {
-                    printw("DIDN'T OPEN");
-                    break;
-                }
-                int i = 0;
-                while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
-                    if (i == 0) {
-                        cpu->PC = memory[0];
-                    }
-                    i++;
-                }
-                isLoaded = 1;
-                display(cpu, 0);
-                fclose(inputFile);
-                break;
-            case STEP:
-                if (isLoaded == 1) {
-                    opNum = 0;
-                } else {
-                    printw("No file loaded!");
-                }
-                break;
-            case DISP_MEM:
-                printw("Position to move to? (in decimal): ");
-
-                scanw("%d", &memShift);
-                if(memShift > MAX_MEMORY - DISP_BOUNDARY) {
-                    printw("Error: out of memory");
-                    memShift = 0;
-                    break;
-                } else {
-                    display(cpu, memShift);
-                }
-                break;
-            case RUN:
-                display(cpu, 0);
-                break;
-            case EXIT:
-                printw("Simulation Terminated.");
-                endwin();
-                break;
-        }
-    }
-}*/
-
 /*
 	This method compares the current value of PC against any breakpoints entered by the user. 
 */
@@ -177,7 +115,7 @@ int controller (CPU_p cpu, int isRunning) {
 	char charToPrint = ' ';
 	char *temp;
 	int value = 0;
-    state = FETCH;
+    state = STORE;
 	int j;
 	
 	if(isRunning && encounteredBreakPont(cpu)) {
@@ -423,25 +361,6 @@ void cpuInit(CPU_p cpu) {
 	cpu->breakPoints[3] = AVAILABLE_BRKPT;
 }
 
-
-
-
-
-
-/*
-	This is the main function that starts the program off.
-
-int main(int argc, char* argv[]){
-
-	setvbuf(stdout, NULL, _IONBF, 0);
-	isLoaded = 0;
-	memShift = 0;
-	CPU_p cpu = malloc(sizeof(CPU_s));
-	cpuInit(cpu);
-	display(cpu, memShift);
-	dialog(cpu);
-	return 0;
-}*/
 
 int main() {
 	setvbuf(stdout, NULL, _IONBF, 0);
