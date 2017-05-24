@@ -110,6 +110,7 @@ typedef struct BUFFER {
 	Register Opcode;
 	Register A;		//16-bit value from Rs
 	Register B;		//16-bit value from either Rs2 or SEXT(immed)
+	Register SEXT;
 }BUFF;
 
 typedef struct ALU {
