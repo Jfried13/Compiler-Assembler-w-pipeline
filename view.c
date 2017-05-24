@@ -140,6 +140,7 @@ void MainInputWindow(CPU_p cpu) {
     char saveFile[20];
     keypad(MainInput, true);
     box(MainInput, 0, 0);
+    char *ptr;
     char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Brkpts", "Exit"};
     int choice, i = 0, garbage = 0;
     int highlight = 0;
@@ -212,8 +213,19 @@ void MainInputWindow(CPU_p cpu) {
                     endwin();
                     exit(0);
                 }
+                //The only thing that this needs is for user to be able to input the memory location with x in front
+                //and to also re display the memory so the new memory locations is centered in the displayed memory
 				if (choices[highlight] == "Edit") {
-					mvwprintw(MainInput, 2, 1, "What memory address would you like to edit: ");
+                    char newMemoryValue[6];
+                    unsigned short placeInMemory, newValue;
+					mvwprintw(MainInput, 2, 1, "What memory address would you like to edit:");
+                    mvwscanw(MainInput, 2, 44, "%04x", &placeInMemory);
+                    mvwprintw(MainInput, 2, 1, "The contents of location x%04x is x%04x", placeInMemory, memory[placeInMemory - START_MEM]);
+                    mvwprintw(MainInput, 2, 1, "What would you like the new value to be in location x%04x:", placeInMemory);
+                    mvwscanw(MainInput, 2, 59, "%s", &newMemoryValue);
+                    newValue = (short)strtol(newMemoryValue, &ptr, 16);
+                    memory[placeInMemory - START_MEM] = newValue;
+                    MemWindow(0);
 					/* This is the logic from the old version, needs to be translated
 					scanf("%04x", &placeInMemory);
 					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - START_MEM + 1]);
@@ -229,7 +241,7 @@ void MainInputWindow(CPU_p cpu) {
 				if (choices[highlight] == "Save") {
                      //mvwprintw(MainInput, 2, 1, "Save Selected");
                      FILE *filePtr;
-                     char *ptr;
+                     //char *ptr;
                      char begNum[4];
                      char endNum[4];
                      long beg, end;
