@@ -136,12 +136,82 @@ void display(CPU_p cpu, int mem) {
     refresh();
 }
 
-void loadFile() {
+void exitCurses(CPU_p cpu) {
+    clear();
+    endwin();
+    exit(0);
+}
+
+void edit(char * ptr, CPU_p cpu) {
+    char newMemoryValue[6];
+    unsigned short placeInMemory, newValue;
+    mvwprintw(MainInput, 2, 1, "What memory address would you like to edit:");
+    mvwscanw(MainInput, 2, 44, "%04x", &placeInMemory);
+    mvwprintw(MainInput, 2, 1, "The contents of location x%04x is x%04x", placeInMemory, memory[placeInMemory - START_MEM]);
+    mvwprintw(MainInput, 2, 1, "What would you like the new value to be in location x%04x:", placeInMemory);
+    mvwscanw(MainInput, 2, 59, "%s", &newMemoryValue);
+    newValue = (short)strtol(newMemoryValue, &ptr, 16);
+    memory[placeInMemory - START_MEM] = newValue;
+    MemWindow(0);
+}
+
+void save(char *ptr, char fileName[], CPU_p cpu) {
+    //mvwprintw(MainInput, 2, 1, "Save Selected");
+    FILE *filePtr;
+    //char *ptr;
+    char begNum[4];
+    char endNum[4];
+    long beg, end;
+    unsigned int memoryStart;
+    mvwprintw(MainInput, 2, 1, "File Name:");
+    mvwscanw(MainInput, 2, 12, "%s", &fileName);
+    mvwprintw(MainInput, 2, 20, "File to save:");
+    writeMemory(fileName);
+}
+
+void step(CPU_p cpu) {
+    if(!loaded) {
+        mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
+        display(cpu, 0);
+    } else {
+        controller(cpu, 0);
+        display(cpu, 0);
+    }
+}
+
+void displayMemory(CPU_p cpu) {
+    mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
+    display(cpu, 0);
+}
+
+void switchView(CPU_p cpu) {
+    if (currentWindow == 0) {
+        DisplayCacheWindow();
+        mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
+    } else {
+        DisplayPipelineWindow(cpu);
+        mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
+    }
+}
+
+void setBreakpoints(CPU_p cpu) {
+    mvwprintw(MainInput, 2, 1, "Reached stbrk");
+}
+
+void run(CPU_p cpu) {
+    mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
+    controller(cpu, 1);
+    display(cpu, 0);
+}
+
+
+void loadFile(FILE *inputFile, char fileName[], CPU_p cpu) {
+    int i = 0;
     mvwprintw(MainInput, 2, 1, "File Name:");
     mvwscanw(MainInput, 2, 12, "%s", &fileName);
     if(checkIfFileExists(fileName)) {
         inputFile = fopen(fileName, "r");
-        fscanf(inputFile, "%04X", &garbage);
+        fscanf(inputFile, "%04X", cpu->PC);
         while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
             if (!i) cpu->PC = memory[0];
             i++;
@@ -156,74 +226,6 @@ void loadFile() {
     }
 }
 
-void exit() {
-    clear();
-    endwin();
-    exit(0);
-}
-
-void edit() {
-    char newMemoryValue[6];
-    unsigned short placeInMemory, newValue;
-    mvwprintw(MainInput, 2, 1, "What memory address would you like to edit:");
-    mvwscanw(MainInput, 2, 44, "%04x", &placeInMemory);
-    mvwprintw(MainInput, 2, 1, "The contents of location x%04x is x%04x", placeInMemory, memory[placeInMemory - START_MEM]);
-    mvwprintw(MainInput, 2, 1, "What would you like the new value to be in location x%04x:", placeInMemory);
-    mvwscanw(MainInput, 2, 59, "%s", &newMemoryValue);
-    newValue = (short)strtol(newMemoryValue, &ptr, 16);
-    memory[placeInMemory - START_MEM] = newValue;
-    MemWindow(0);
-}
-
-void save() {
-    //mvwprintw(MainInput, 2, 1, "Save Selected");
-    FILE *filePtr;
-    //char *ptr;
-    char begNum[4];
-    char endNum[4];
-    long beg, end;
-    unsigned int memoryStart;
-    mvwprintw(MainInput, 2, 1, "File Name:");
-    mvwscanw(MainInput, 2, 12, "%s", &fileName);
-    mvwprintw(MainInput, 2, 20, "File to save:");
-    writeMemory(fileName);
-}
-
-void step() {
-    if(!loaded) {
-        mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
-        display(cpu, 0);
-    } else {
-        controller(cpu, 0);
-        display(cpu, 0);
-    }
-}
-
-void displayMemory() {
-    mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
-    display(cpu, 0);
-}
-
-void switchView() {
-    if (currentWindow == 0) {
-        DisplayCacheWindow();
-        mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
-    } else {
-        DisplayPipelineWindow(cpu);
-        mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
-    }
-}
-
-void setBrakepoints() {
-    mvwprintw(MainInput, 2, 1, "Reached stbrk");
-}
-
-void run() {
-    mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
-    controller(cpu, 1);
-    display(cpu, 0);
-}
-
 void MainInputWindow(CPU_p cpu) {
 	FILE *inputFile;
     char fileName[MAX_FILE_NAME];
@@ -232,7 +234,7 @@ void MainInputWindow(CPU_p cpu) {
     box(MainInput, 0, 0);
     char *ptr;
     char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Brkpts", "Exit"};
-    int choice, i = 0, garbage = 0;
+    int choice;
     int highlight = 0;
 	//int loaded = 0;
     while (1){
@@ -279,42 +281,42 @@ void MainInputWindow(CPU_p cpu) {
                 mvwprintw(MainInput, 2, 77, "|");
                 
 				if (choices[highlight] == "Load") {
-                    loadFile();
+                    loadFile(inputFile, fileName, cpu);
                 }
                 if (choices[highlight] == "Exit") {
-                    exit();
+                    exitCurses(cpu);
 
                 }
                 //The only thing that this needs is for user to be able to input the memory location with x in front
                 //and to also re display the memory so the new memory locations is centered in the displayed memory
 				if (choices[highlight] == "Edit") {
-                    edit();
+                    edit(ptr, cpu);
 					
                 }
 				if (choices[highlight] == "Save") {
-                    save();
+                    save(ptr, fileName, cpu);
 
                 }
 				
                 if (choices[highlight] == "Step") {
-                    step();
+                    step(cpu);
 					
                 }
                 if (choices[highlight] == "Dsply_Mem") {
-                    displayMemory();
+                    displayMemory(cpu);
 
                 }
                 if (choices[highlight] == "Switch_View") {
-                    switchView();
+                    switchView(cpu);
                 }
 				
 				 if (choices[highlight] == "Set_Brkpts") {
-                     setBrakepoints();
+                     setBreakpoints(cpu);
 
                 }
 				
                 if (choices[highlight] == "Run") {
-                    run();
+                    run(cpu);
                 }
                 break;
             default:
