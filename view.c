@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "tempslc3.h"
 
 // Created by Daniel Ivanov on 5/12/2017.
@@ -45,6 +46,7 @@ int currentWindow = 0;
 
 void MainInputWindow();
 int checkIfFileExists(char* fileToCheckIfExists);
+void writeMemory(char * nameOfFileToWriteTo);
 
 void displayTitle() {
     mvwprintw(MainWindow, 0, 28, "Welcome to LC3 Simulator");
@@ -135,6 +137,7 @@ void display(CPU_p cpu, int mem) {
 void MainInputWindow(CPU_p cpu) {
 	FILE *inputFile;
     char fileName[MAX_FILE_NAME];
+    char saveFile[20];
     keypad(MainInput, true);
     box(MainInput, 0, 0);
     char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Brkpts", "Exit"};
@@ -224,7 +227,35 @@ void MainInputWindow(CPU_p cpu) {
 					 */
                 }
 				if (choices[highlight] == "Save") {
-                     mvwprintw(MainInput, 2, 1, "Save Selected");
+                     //mvwprintw(MainInput, 2, 1, "Save Selected");
+                     FILE *filePtr;
+                     char *ptr;
+                     char begNum[4];
+                     char endNum[4];
+                     long beg, end;
+                     unsigned int memoryStart;
+                     mvwprintw(MainInput, 2, 1, "File Name:");
+                     mvwscanw(MainInput, 2, 12, "%s", &fileName);
+                     mvwprintw(MainInput, 2, 20, "File to save:");
+                     writeMemory(fileName);
+                     //mvwprintw(MainInput, 2, 34, saveFile);
+                     //filePtr = fopen(fileName, "w");
+                     //mvwprintw(MainInput, 2, 1, "Enter the beginning of memory to save:");
+                     //mvwscanw(MainInput, 2, 39, "%s", &begNum);
+                     //mvwprintw(MainInput, 2, 43, "End of memory to save:");
+                     //mvwscanw(MainInput, 2, 65, "%s", &endNum);
+                     //mvwprintw(MainInput, 2, 1, endNum);
+                     //beg = strtol(begNum, &ptr, 10);
+                     //end = strtol(endNum, &ptr, 10);
+                     //for(int i=beg; i <= end; i++) {
+                     //printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+                     //        fprintf(filePtr, "%04x\n", memory[i]);
+                     //    }
+                     //fclose(filePtr);
+
+                     //mvwprintw(MainInput,2, 1, "number = ");
+                     //mvwprintw(MainInput,2, 9, memoryStart);
+                     //writeMemory(fileName);
                 }
 				
                 if (choices[highlight] == "Step") {
@@ -282,16 +313,20 @@ void initializeWindow() {
     CacheWindow = newwin(PHEIGHT,PWIDTH, 1, 15);
 }
 
-//returns 1 if true 0 if false
+/*
+This function takes a string as a parameter and then attempts to
+open a file to read with that name.  If it was successful then the 
+file exists and we return a 1 else return 0.
+*/
 int checkIfFileExists(char* fileToCheckIfExists) {
 	FILE* filePtr;
-	filePtr = fopen(fileToCheckIfExists, "r+");
-	if(filePtr != NULL) {
+    if(filePtr = fopen(fileToCheckIfExists, "r")) {
 		fclose(filePtr);
 		return 1;
 	} else {
+        fclose(filePtr);
 		return 0;
-		fclose(filePtr);
+		
 	}
 }
 
@@ -325,38 +360,57 @@ void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
 	}
 	}
 }
-
+//need to fix some magic numbers in here
 //need to #define TRAP25 61477;
-void writeMemory(char * fileToWriteToName) {
-	FILE * filePtr;
-	int TRAP25 = 61477;
-	unsigned int memoryStart, memoryEnd; 
-	//the file exists so promt the user to see if they 
-	//are ok with overwritting the preexisting file right here
-	//include if/else statement to check user decision for overwriting
-	if(checkIfFileExists(fileToWriteToName)) {
-
-		filePtr = fopen(fileToWriteToName, "w");
-		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
-		}
-		fclose(filePtr);
-
-	//the file doesn't exist so create the new file and write to it
-	} else {
-		FILE * filePtr;
-		filePtr = fopen(fileToWriteToName, "w");
-		printf("Enter the beginning and end of the memory to save: ");
-		scanf("%4x %4x", &memoryStart, &memoryEnd);
-		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
-		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
-		}
-		fclose(filePtr);
-	}
+//needs to be broken down into two methods
+/*
+This file takes a string as a file name and checks to see if it exists,
+if it does it prompts the user to see if they would like to overwrite the file
+if they don't than return back to the user choices else ask for the part of memory
+to write to a new file and copy it.
+*/
+void writeMemory(char * nameOfFileToWriteTo) {
+    FILE * filePtr;
+    char *ptr;
+    char begNum[4];
+    char endNum[4];
+    
+    if(checkIfFileExists(nameOfFileToWriteTo) == 1) {
+        char userResponse[4];
+        mvwprintw(MainInput, 2, 1, "This file already exists would you like to overwrite(yes/no):");
+        mvwscanw(MainInput, 2, 62, "%s", &userResponse);
+        if(strcmp(userResponse, "yes") == 0) {
+            filePtr = fopen(nameOfFileToWriteTo, "w");
+            mvwprintw(MainInput, 2, 1, "Enter the beginning of memory to save:");
+            mvwscanw(MainInput, 2, 39, "%s", &begNum);
+            mvwprintw(MainInput, 2, 43, "End of memory to save:");
+            mvwscanw(MainInput, 2, 65, "%s", &endNum);
+            mvwprintw(MainInput, 2, 1, endNum);
+            int beg = strtol(begNum, &ptr, 10) - 3000;
+            int end = strtol(endNum, &ptr, 10) - 3000;
+            for(int i=beg; i <= end; i++) { 
+                fprintf(filePtr, "%04x\n", memory[i]);
+            }
+        } 
+    } else {
+	    
+	    filePtr = fopen(nameOfFileToWriteTo, "w");
+        mvwprintw(MainInput, 2, 1, "Enter the beginning of memory to save:");
+        mvwscanw(MainInput, 2, 39, "%s", &begNum);
+        mvwprintw(MainInput, 2, 43, "End of memory to save:");
+        mvwscanw(MainInput, 2, 65, "%s", &endNum);
+        mvwprintw(MainInput, 2, 1, endNum);
+        int beg = strtol(begNum, &ptr, 10) - 3000;
+        int end = strtol(endNum, &ptr, 10) - 3000;
+        for(int i=beg; i <= end; i++) { 
+            fprintf(filePtr, "%04x\n", memory[i]);
+        }
+        
+    }
+    fclose(filePtr);
 }
+
+
 
 
 
