@@ -1,8 +1,8 @@
-c0/*
+/*
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include "tempslc3.h"
+#include "testingh.h"
 
 int controller (CPU_p, int);
 
@@ -75,15 +75,19 @@ int trap(CPU_p cpu, int trap_vector) {
 /*
 	This is a helper function to choose which CC values to set (N, Z, or, P)
 */
-void chooseFlag (CPU_p cpu, int cc) {
-	if (cc < 0){
-		setFlags(cpu, 1, 0, 0);
-	}
-	if (cc == 0){
-		setFlags(cpu, 0, 1, 0);
-	}
-	if (cc > 0){
-		setFlags(cpu, 0, 0, 1);
+void setCC(CPU_p cpu, Register Rd) {
+	if (Rd == 0) {
+		cpu->N = 0;
+		cpu->Z = 1;
+		cpu->P = 0;
+	} else if (Rd & HIGH_ORDER_BIT_VALUE8) { // 0000 0000 1000 0000
+		cpu->N = 1;
+		cpu->Z = 0;
+		cpu->P = 0;
+	} else {
+		cpu->N = 0;
+		cpu->Z = 0;
+		cpu->P = 1;
 	}
 }
 	
@@ -150,11 +154,12 @@ int displayScreen(CPU_p cpu, int mem) {
 	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
 	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
 	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
-<<<<<<< HEAD
+	printf("\nPipeLine Info:\n");
+	printf("FBUFF: PC: %04x  IR: %04x\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
+	printf("DBUFF: Op: %04x  DR: %04x  SR1: %04x  SEXT/SR2: %04x\n", cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B);
+	printf("EBUFF: Op: %04x DR: %04x  RESULT: %04x\n", cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].B);
+	printf("MBUFF: Op: %04x DR: %04x RESULT: %04x\n", cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].B);
 	printf("  Select: 1)Load,2)Save, 3)Step, 5)Display Mem 6)Edit, 7)Run, 9)Exit\n");
-=======
-	printf("  Select: 1)Load, 2)Save, 3)Step, 5)Display Mem, 6)Edit, 7)Run, 9)Exit\n");
->>>>>>> master
 	return 0;
 }
 
@@ -222,7 +227,7 @@ int dialog(CPU_p cpu) {
 				case EDIT:
 					printf("What memory address would you like to edit: ");
 					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory - START_MEM + 1c, memory[placeInMemory - START_MEM + 1]);
+					printf("The contents of location %04x is  %04x\n", placeInMemory - START_MEM + 1, memory[placeInMemory - START_MEM + 1]);
 					printf("What would you like the new value in location %04x to be: ", placeInMemory);
 					scanf("%s", &newMemoryValue);
 					printf("%s\n", newMemoryValue);
@@ -305,115 +310,93 @@ int controller (CPU_p cpu, int isRunning) {
 	}
     for (;;) {
         switch (state) {
-            case FETCH: // microstates 18, 33, 35 in the book
-            	 cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
-            	 cpu->PC++;	// increment PC
-            	 cpu->MDR = memory[cpu->MAR];
-            	 cpu->ir = cpu->MDR;
-            	 cc = 0;
-               state = DECODE;
-            case DECODE:
-				opcode = cpu->ir >> OPCODE_SHIFT;
-				Rd = cpu->ir & DR_MASK;
-				Rd = (short)Rd >> DR_SHIFT;
-				Rs1 = cpu->ir & SR_MASK;
-				Rs1 = (short)Rs1 >> SR_SHIFT;
-				Rs2 = cpu->ir & SR2_MASK;
-				immed_offset = cpu->ir & SR_MASK;
-				BaseR = (cpu->ir & BASE_MASK) >> SR_SHIFT;
-                state = EVAL_ADDR;
-            case EVAL_ADDR: // Look at the LD instruction to see microstate 2 example
-                switch (opcode) {
-					case LDR:
-						cpu->MAR = (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL;
-						break;
-					case LD:
-						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
-						break;
-					case ST:
-						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
-						break;
-					case STR:
-						cpu->MAR = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset);
-						break;
-					case TRAP:
-						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
-						break;
-                }
-                state = FETCH_OP;
-            case FETCH_OP: // Look at ST. Microstate 23 example of getting a value out of a register
-                switch (opcode) {
-					case LDR:
-					case LD:
-					 cpu->MDR = memory[cpu->MAR];
-						break;
+			case STORE: // Look at ST. Microstate 16 is the store to memory
+                switch (cpu->buffers[3].Opcode) {
 					case ADD:
-						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
-							cpu->A = cpu->r[Rs1];
-							cpu->B = (immed_offset & SEXT5_MASK);
-						} else{
-							cpu->A = cpu->r[Rs1];
-							cpu->B = cpu->r[Rs2];
-						}
+						cpu->r[Rd] = cpu->buffers[3].A;
 
 						break;
 					case AND:
-					if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
-							cpu->A = cpu->r[Rs1];
-							cpu->B = (immed_offset & SEXT5_MASK);
-						} else{
-							cpu->A = cpu->r[Rs1];
-							cpu->B = cpu->r[Rs2];
-						}
+						cpu->r[Rd] = cpu->buffers[3].A;
 						break;
 					case NOT:
-						cpu->A = cpu->r[Rs1];
+						cpu->r[Rd] = cpu->buffers[3].A;
+						break;
+					case LDR:
+					case LD:
+						cpu->r[Rd] = cpu->MDR;
+						setCC(cpu, cpu->r[Rd]);
+						//cc = cpu->r[Rd];
+						//chooseFlag (cpu, cc);
+						break;
+					case LEA:
+						cpu->r[Rd] = cpu->buffers[3].PC + sext9(immed_offset);
+						setCC(cpu, cpu->r[Rd]);
+						//cc = cpu->r[Rd];
+						//chooseFlag (cpu, cc);
 						break;
 					case STR:
 					case ST:
-						cpu->MDR = cpu->r[Rd];
+						memory[cpu->MAR] = cpu->MDR;
 						break;
-					case TRAP:
-						cpu->MDR = memory[cpu->MAR];
-						cpu->r[7] = cpu->PC;
-                }
-                state = EXECUTE;
-            case EXECUTE: // Note that ST does not have an execute microstate
-                switch (opcode) {
+	                }
+                //state = FETCH;
+			case MEM:
+				switch (cpu->buffers[2].Opcode) {
+					case ST:
+					case STR:
+					case STI:
+						//cpu->buffers[2].MAR = memory[cpu->buffers[2].MDR];
+						
+					case LD:
+					case LDR:
+					case LDI:
+					case LEA:
+						break;
+				}
+				//Do Mem work with EBuff (buffers[2]) here first.
+				cpu->buffers[3] = cpu->buffers[2];
+				cpu->buffers[3].A = cpu->alu.A;
+				cpu->buffers[3].B = cpu->alu.B;
+			case EXECUTE: // Note that ST does not have an execute microstate
+				switch (cpu->buffers[1].Opcode) {
 					case ADD:
-						if (cpu->A < 0) {
-							cpu->Res = -(cpu->A) + (cpu->B);
-						} else if (cpu->B < 0) {
-							cpu->Res = (cpu->A) -(cpu->B);
-						} else if ((cpu->A < 0) & (cpu->B < 0)) {
-							cpu->Res = -(cpu->A) -(cpu->B);
+						if (cpu->alu.A & HIGH_ORDER_BIT_VALUE15) {
+							cpu->buffers[2].A = -(cpu->alu.A) + (cpu->alu.B);
+						} else if (cpu->B & HIGH_ORDER_BIT_VALUE15) {
+							cpu->buffers[2].A = (cpu->alu.A) -(cpu->alu.B);
+						} else if ((cpu->alu.A & HIGH_ORDER_BIT_VALUE15) && (cpu->alu.B & HIGH_ORDER_BIT_VALUE15)) {
+							cpu->buffers[2].A = -(cpu->alu.A) -(cpu->alu.B);
 						} else {
-							cpu->Res = (cpu->A) + (cpu->B);
+							cpu->buffers[2].A = (cpu->alu.A) + (cpu->alu.B);
 						}
-						cc = (short int) cpu->Res;
-						chooseFlag (cpu, cc);
+						setCC(cpu, cpu->Res);
+						//cc = (short int) cpu->Res;
+						//chooseFlag (cpu, cc);
 						break;
 					case AND:
-						cpu->Res = cpu->A & cpu->B;
+						cpu->buffers[2].A = cpu->alu.A & cpu->alu.B;
 						cpu->N = 0;
 						cpu->Z = 0;
 						cpu->P = 0;
-						cc = cpu->Res;
-						chooseFlag (cpu, cc);
+						setCC(cpu, cpu->buffers[2].A);
+						//cc = cpu->Res;
+						//chooseFlag (cpu, cc);
 						break;
 					case NOT:
-						cpu->Res = ~(cpu->A);
+						cpu->buffers[2].A = ~(cpu->alu.A);
 						cpu->N = 0;
 						cpu->Z = 0;
 						cpu->P = 0;
-						cc = (short) cpu->Res;
-						chooseFlag (cpu, cc);
+						setCC(cpu, cpu->buffers[2].A);
+						//cc = (short) cpu->Res;
+						//chooseFlag (cpu, cc);
 						break;
 					case TRAP:
-						cpu->PC = cpu->MDR;
+						cpu->buffers[2].PC = cpu->MDR;
 						value = trap(cpu, cpu->MAR);
-						cpu->PC = cpu->r[7];
-						
+						cpu->buffers[2].PC = cpu->r[7];
+						//start NOP stall
 						if (value == 1) {
 							return 0;
 						} else if (value > 1) {
@@ -423,67 +406,133 @@ int controller (CPU_p cpu, int isRunning) {
 						}
 						break;
 					case JSRR:
-						cpu->r[7] = cpu->PC;
-						cpu->PC = cpu->r[BaseR];
+						cpu->r[7] = cpu->buffers[2].PC;
+						cpu->buffers[2].PC = cpu->r[BaseR];
+						//start NOP stall
 						break;
 					case JMP:
-						cpu->r[7] = cpu->PC;
-						cpu->PC = cpu->r[Rs1];
+						cpu->r[7] = cpu->buffers[2].PC;
+						cpu->buffers[2].PC = cpu->r[cpu->buffers[2].A];
 						break;
 					case BR:
-						if (cpu->N && (Rd & 4)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+						if (cpu->N && (cpu->buffers[2].Rd & 4)) {
+							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
-						if (cpu->Z && (Rd & 2)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+						if (cpu->Z && (cpu->buffers[2].Rd & 2)) {
+							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
-						if (cpu->P && (Rd & 1)) {
-							cpu->PC = cpu->PC + sext9(immed_offset);
+						if (cpu->P && (cpu->buffers[2].Rd & 1)) {
+							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
-					break;
+				}
+				cpu->buffers[2] = cpu->buffers[1];
+				cpu->buffers[2].A;
+				cpu->buffers[2].B;
+			case IDRR:
+				cpu->buffers[1].Opcode = cpu->buffers[0].IR >> OPCODE_SHIFT;			//Decode Stage
+				cpu->buffers[1].Rd = cpu->buffers[0].IR & DR_MASK;
+				cpu->buffers[1].Rd = (short)cpu->buffers[1].Rd >> DR_SHIFT;
+				cpu->buffers[1].A = cpu->buffers[0].IR & SR_MASK;
+				cpu->buffers[1].A = (short)cpu->buffers[1].A >> SR_SHIFT;
+				cpu->buffers[1].B = cpu->buffers[1].B & SR2_MASK;
+				immed_offset = cpu->buffers[0].IR & SR_MASK;
+				BaseR = (cpu->buffers[0].IR & BASE_MASK) >> SR_SHIFT;
+				
+				//IDRR Buffer
+				
+                switch (cpu->buffers[1].Opcode) {							//Evaluate Address Stage
+					case LDR:
+						cpu->MAR = (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL;
+						break;
+					case LD:
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						break;
+					case LDI:
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						break;
+					case ST:
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						break;
+					case STR:
+						cpu->MAR = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset);
+						break;
+					case STI:
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						break;
+					case TRAP:
+						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
+						break;
                 }
-                state = STORE;
-            case STORE: // Look at ST. Microstate 16 is the store to memory
-                switch (opcode) {
+
+                switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
+					case LDR:
+					case LD:
+					 cpu->MDR = memory[cpu->MAR];
+						break;
+					case LDI:
+						cpu->MDR = memory[cpu->MAR];
+						break;
 					case ADD:
-						cpu->r[Rd] = cpu->Res;
+						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
+							cpu->buffers[2].A = cpu->r[cpu->buffers[1].A];
+							cpu->buffers[2].B = (immed_offset & SEXT5_MASK);
+						} else{
+							cpu->A = cpu->r[Rs1];
+							cpu->B = cpu->r[Rs2];
+						}
 
 						break;
 					case AND:
-						cpu->r[Rd] = cpu->Res;
+					if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
+							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
+							cpu->buffers[1].B = (immed_offset & SEXT5_MASK);
+						} else{
+							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
+							cpu->buffers[1].B = cpu->r[cpu->buffers[1].B];
+						}
 						break;
 					case NOT:
-						cpu->r[Rd] = cpu->Res;
-						break;
-					case LDR:
-					case LD:
-						cpu->r[Rd] = cpu->MDR;
-						cc = cpu->r[Rd];
-						chooseFlag (cpu, cc);
-						break;
-					case LEA:
-						cpu->r[Rd] = cpu->PC + sext9(immed_offset);
-						cc = cpu->r[Rd];
-						chooseFlag (cpu, cc);
+						cpu->A = cpu->r[cpu->buffers[1].A];
 						break;
 					case STR:
 					case ST:
-						memory[cpu->MAR] = cpu->MDR;
+						cpu->MDR = cpu->r[cpu->buffers[1].Rd];
 						break;
-	                }
-                state = FETCH;
+					case STI:
+						cpu->MDR = memory[cpu->MAR];
+						break;
+					case TRAP:
+						cpu->MDR = memory[cpu->MAR];
+						cpu->r[7] = cpu->buffers[1].PC;
+                }
+				cpu->buffers[1] = cpu->buffers[0];
+				cpu->buffers[1].A; //might need to take these out
+				cpu->buffers[1].B;
+                state = EXECUTE;
+            case FETCH: // microstates 18, 33, 35 in the book
+				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
+				cpu->PC++;	// increment PC
+				cpu->MDR = memory[cpu->MAR];
+				cpu->ir = cpu->MDR;
+				cc = 0;
+				cpu->buffers[0].PC = cpu->PC;		//IF Buffer
+				cpu->buffers[0].IR = cpu->ir;
+                state = IDRR;     
+					//break;
+                
+                //state = STORE;
+            
                 break;
         }
 		if (!isRunning) {
-			displayScreen(cpu, 0);
+			//display(cpu, 0);
 			scanf("%c", &charToPrint);
 		}
     }
 }
-
 
 /*
 	This function initializes the cpu fields
@@ -563,7 +612,7 @@ void writeMemory(char * fileToWriteToName) {
 */
 int main(int argc, char* argv[]){
 
-	setvbuf(stdout, NULL, _IONBF, 0);
+	//setvbuf(stdout, NULL, _IONBF, 0);
 	isLoaded = 0;
 	memShift = 0;
 	CPU_p cpu = malloc(sizeof(CPU_s));

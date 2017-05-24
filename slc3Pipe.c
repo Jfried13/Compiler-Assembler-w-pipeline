@@ -159,6 +159,8 @@ int controller (CPU_p cpu, int isRunning) {
 					case ST:
 					case STR:
 					case STI:
+						//cpu->buffers[2].MAR = memory[cpu->buffers[2].MDR];
+						
 					case LD:
 					case LDR:
 					case LDI:
@@ -261,11 +263,17 @@ int controller (CPU_p cpu, int isRunning) {
 					case LD:
 						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
+					case LDI:
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						break;
 					case ST:
 						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
 					case STR:
 						cpu->MAR = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset);
+						break;
+					case STI:
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
 						break;
 					case TRAP:
 						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
@@ -276,6 +284,9 @@ int controller (CPU_p cpu, int isRunning) {
 					case LDR:
 					case LD:
 					 cpu->MDR = memory[cpu->MAR];
+						break;
+					case LDI:
+						cpu->MDR = memory[cpu->MAR];
 						break;
 					case ADD:
 						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
@@ -303,6 +314,9 @@ int controller (CPU_p cpu, int isRunning) {
 					case ST:
 						cpu->MDR = cpu->r[cpu->buffers[1].Rd];
 						break;
+					case STI:
+						cpu->MDR = memory[cpu->MAR];
+						break;
 					case TRAP:
 						cpu->MDR = memory[cpu->MAR];
 						cpu->r[7] = cpu->buffers[1].PC;
@@ -313,6 +327,7 @@ int controller (CPU_p cpu, int isRunning) {
                 state = EXECUTE;
             case FETCH: // microstates 18, 33, 35 in the book
 				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
+				printf("hello i am here");
 				cpu->PC++;	// increment PC
 				cpu->MDR = memory[cpu->MAR];
 				cpu->ir = cpu->MDR;

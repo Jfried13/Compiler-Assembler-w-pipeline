@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "tempslc3.h"
+//#include "slc3Pipe.c"
 
 // Created by Daniel Ivanov on 5/12/2017.
 // this class if for the NCurses Gui.
@@ -19,6 +20,7 @@ WINDOW *CacheWindow;
 
 // 0 for pipline window, 1 for cache window
 int currentWindow = 0;
+int loaded = 0;
 
 #define PHEIGHT 18
 #define PWIDTH 48
@@ -110,6 +112,7 @@ void DisplayPipelineWindow(CPU_p cpu) {
 	mvwprintw(Pipeline, 6, 4, "DBUFF: Op:  DR:  SR1:  SEXT/SR2:");
 	mvwprintw(Pipeline, 7, 11, "0x%X  0x%X  0x%X   0x%X", cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B);
 	mvwprintw(Pipeline, 9, 4, "EBUFF: Op:  DR:  RESULT:");
+    printw("lhello");
 	mvwprintw(Pipeline, 10, 11, "0x%X  0x%X  0x%X", cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].B);
 	mvwprintw(Pipeline, 12, 4, "MBUFF: Op:  DR:  RESULT:");
 	mvwprintw(Pipeline, 13, 11, "0x%X  0x%X  0x%X", cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].B);
@@ -144,7 +147,7 @@ void MainInputWindow(CPU_p cpu) {
     char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Brkpts", "Exit"};
     int choice, i = 0, garbage = 0;
     int highlight = 0;
-	int loaded = 0;
+	//int loaded = 0;
     while (1){
         mvwprintw(MainInput, 1, 1, "Select: ");
         for (int i = 0; i < 9; i++) {
@@ -226,17 +229,7 @@ void MainInputWindow(CPU_p cpu) {
                     newValue = (short)strtol(newMemoryValue, &ptr, 16);
                     memory[placeInMemory - START_MEM] = newValue;
                     MemWindow(0);
-					/* This is the logic from the old version, needs to be translated
-					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - START_MEM + 1]);
-					printf("What would you like the new value in location %04x to be: ", placeInMemory);
-					scanf("%s", &newMemoryValue);
-					printf("%s\n", newMemoryValue);
-					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
-					memory[placeInMemory - START_MEM + 1] = newValue;
-					displayScreen(cpu, placeInMemory - START_MEM - 7);
-                     mvwprintw(MainInput, 2, 1, "Edit Selected");
-					 */
+					
                 }
 				if (choices[highlight] == "Save") {
                      //mvwprintw(MainInput, 2, 1, "Save Selected");
@@ -250,24 +243,6 @@ void MainInputWindow(CPU_p cpu) {
                      mvwscanw(MainInput, 2, 12, "%s", &fileName);
                      mvwprintw(MainInput, 2, 20, "File to save:");
                      writeMemory(fileName);
-                     //mvwprintw(MainInput, 2, 34, saveFile);
-                     //filePtr = fopen(fileName, "w");
-                     //mvwprintw(MainInput, 2, 1, "Enter the beginning of memory to save:");
-                     //mvwscanw(MainInput, 2, 39, "%s", &begNum);
-                     //mvwprintw(MainInput, 2, 43, "End of memory to save:");
-                     //mvwscanw(MainInput, 2, 65, "%s", &endNum);
-                     //mvwprintw(MainInput, 2, 1, endNum);
-                     //beg = strtol(begNum, &ptr, 10);
-                     //end = strtol(endNum, &ptr, 10);
-                     //for(int i=beg; i <= end; i++) {
-                     //printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-                     //        fprintf(filePtr, "%04x\n", memory[i]);
-                     //    }
-                     //fclose(filePtr);
-
-                     //mvwprintw(MainInput,2, 1, "number = ");
-                     //mvwprintw(MainInput,2, 9, memoryStart);
-                     //writeMemory(fileName);
                 }
 				
                 if (choices[highlight] == "Step") {
