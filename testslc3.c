@@ -291,6 +291,40 @@ void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
 	}
 	}
 }
+
+
+void printBuffer(struct BUFFER buff) {
+	if (buff.PC == NOP) printf("PC = NOP\n");
+	else printf ("PC = %04X\n", buff.PC);
+	
+	if (buff.IR == NOP) printf("IR = NOP\n");
+	else printf ("IR = %04X\n", buff.IR);
+	
+	if (buff.Rd == NOP) printf("Rd = NOP\n");
+	else printf("Rd = %d\n", buff.Rd);
+	
+	if (buff.Opcode == NOP) printf("Opcode = NOP\n");
+	else printf("Opcode = %d\n", buff.Opcode);
+	
+	if (buff.A == NOP) printf("A = NOP\n");
+	else printf("A = %04X\n", buff.A);
+	
+	if (buff.B == NOP) printf("B = NOP\n");
+	else printf("B = %04X\n", buff.B);
+	
+	if (buff.SEXT == NOP) printf("SEXT = NOP\n");
+	else printf("SEXT = %04X\n", buff.SEXT);
+}
+
+
+void printAllBuffers(CPU_p cpu) {
+	for (int i = 0; i < MAX_BUFFERS; i++) {
+		printBuffer(cpu->buffers[i]);
+		printf("\n");
+	}
+}
+
+
 /*
 	This is the main controller for the program. It takes a CPU struct and an int
 	which is being used as a boolean for displaying the screen.
@@ -310,6 +344,7 @@ int controller (CPU_p cpu, int isRunning) {
 	}
     for (;;) {
 		//printf("here\n");
+		
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
 				printf("STORE\n");
@@ -361,12 +396,14 @@ int controller (CPU_p cpu, int isRunning) {
 				}
 				//Do Mem work with EBuff (buffers[2]) here first.
 				cpu->buffers[3] = cpu->buffers[2];
-				cpu->buffers[3].A = cpu->alu.A;
-				cpu->buffers[3].B = cpu->alu.B;
+				//cpu->buffers[3].A = cpu->alu.A;
+				//cpu->buffers[3].B = cpu->alu.B;
 				state = EXECUTE;
 				break;
 			case EXECUTE: // Note that ST does not have an execute microstate
 				printf("EXECUTE\n");
+				cpu->buffers[2].PC = cpu->buffers[1].PC;
+				cpu->buffers[2].Rd = cpu->buffers[1].Rd;
 				switch (cpu->buffers[1].Opcode) {
 					case ADD:
 						if (cpu->alu.A & HIGH_ORDER_BIT_VALUE15) {
@@ -435,76 +472,83 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(immed_offset);
 							break;
 						}
+					case NOP:
+						break;
+					case LEA:
+						cpu->buffers[2].A = cpu->buffers[1].PC + sext9(cpu->buffers[1].SEXT);
+						break;
 				}
-				cpu->buffers[2] = cpu->buffers[1];
-				cpu->buffers[2].A;
-				cpu->buffers[2].B;
+				//cpu->buffers[3] = cpu->buffers[2];
+				//cpu->buffers[2] = cpu->buffers[1];
+				//cpu->buffers[2].A;
+				//cpu->buffers[2].B;
 				state = IDRR;
 				break;
 			case IDRR:
 				printf("IDRR\n");
+				cpu->buffers[1].PC = cpu->buffers[0].PC;
 				cpu->buffers[1].Opcode = cpu->buffers[0].IR >> OPCODE_SHIFT;			//Decode Stage
 				cpu->buffers[1].Rd = cpu->buffers[0].IR & DR_MASK;
 				cpu->buffers[1].Rd = (short)cpu->buffers[1].Rd >> DR_SHIFT;
 				cpu->buffers[1].A = cpu->buffers[0].IR & SR_MASK;
 				cpu->buffers[1].A = (short)cpu->buffers[1].A >> SR_SHIFT;
 				cpu->buffers[1].B = cpu->buffers[1].B & SR2_MASK;
-				immed_offset = cpu->buffers[0].IR & SR_MASK;
+				cpu->buffers[1].SEXT = cpu->buffers[0].IR & SR_MASK;
+				//immed_offset = cpu->buffers[0].IR & SR_MASK;
 				BaseR = (cpu->buffers[0].IR & BASE_MASK) >> SR_SHIFT;
-				printf("here\n");
+				//printf("here\n");
 				//IDRR Buffer
-				printf ("%d\n", cpu->buffers[1].Opcode == NOP);
-				printf ("%d\n", cpu->buffers[1].Opcode);
+				//printBuffer(cpu->buffers[1]);
                 switch (cpu->buffers[1].Opcode) {							//Evaluate Address Stage
 					case LDR:
-						printf("LDR\n");
-						printf("%04X = (%04X + %04X) - %d\n", (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL, cpu->r[BaseR], sext6(immed_offset), CONVERT_TO_DECIMAL);
-						cpu->MAR = (cpu->r[BaseR] + sext6(immed_offset)) - CONVERT_TO_DECIMAL;
+						//printf("LDR\n");
+						//printf("%04X = (%04X + %04X) - %d\n", (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL, cpu->r[BaseR], sext6(cpu->buffers[1].SEXT), CONVERT_TO_DECIMAL);
+						cpu->MAR = (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL;
 						break;
 					case LD:
-						printf("LD\n");
-						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						//printf("LD\n");
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
 						break;
 					case LDI:
-						printf("LDI\n");
-						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						//printf("LDI\n");
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
 						break;
 					case ST:
-						printf("ST\n");
-						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						//printf("ST\n");
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
 						break;
 					case STR:
-						printf("STR\n");
-						cpu->MAR = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(immed_offset);
+						//printf("STR\n");
+						cpu->MAR = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(cpu->buffers[1].SEXT);
 						break;
 					case STI:
-						printf("STI\n");
-						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(immed_offset);
+						//printf("STI\n");
+						cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
 						break;
 					case TRAP:
-						printf("TRAP\n");
-						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
+						//printf("TRAP\n");
+						cpu->MAR = cpu->buffers[1].SEXT & TRAP_VECTOR_MASK;
 						break;
 					case NOP:
-						printf("NOP\n");
+						//printf("NOP\n");
 						break;
                 }
 
                 switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
 					case LDR:
 					case LD:
-						printf("LD/LDR\n");
+						//printf("LD/LDR\n");
 						cpu->MDR = memory[cpu->MAR];
 						break;
 					case LDI:
-						printf("LDI\n");
+						//printf("LDI\n");
 						cpu->MDR = memory[cpu->MAR];
 						break;
 					case ADD:
-						printf("ADD\n");
-						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
-							cpu->buffers[2].A = cpu->r[cpu->buffers[1].A];
-							cpu->buffers[2].B = (immed_offset & SEXT5_MASK);
+						//printf("ADD\n");
+						if(HIGH_ORDER_BIT_VALUE6 & cpu->buffers[1].IR){ //0000|0000|0010|0000
+							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
+							cpu->buffers[1].B = (cpu->buffers[1].SEXT & SEXT5_MASK);
 						} else{
 							cpu->A = cpu->r[Rs1];
 							cpu->B = cpu->r[Rs2];
@@ -512,41 +556,41 @@ int controller (CPU_p cpu, int isRunning) {
 
 						break;
 					case AND:
-						printf("AND\n");
-						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
+						//printf("AND\n");
+						if(HIGH_ORDER_BIT_VALUE6 & cpu->buffers[1].IR){ //0000|0000|0010|0000
 							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
-							cpu->buffers[1].B = (immed_offset & SEXT5_MASK);
+							cpu->buffers[1].B = (cpu->buffers[1].SEXT & SEXT5_MASK);
 						} else{
 							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
 							cpu->buffers[1].B = cpu->r[cpu->buffers[1].B];
 						}
 						break;
 					case NOT:
-						printf("NOT\n");
+						//printf("NOT\n");
 						cpu->A = cpu->r[cpu->buffers[1].A];
 						break;
 					case STR:
 					case ST:
-						printf("ST/STR\n");
+						//printf("ST/STR\n");
 						cpu->MDR = cpu->r[cpu->buffers[1].Rd];
 						break;
 					case STI:
-						printf("STI\n");
+						//printf("STI\n");
 						cpu->MDR = memory[cpu->MAR];
 						break;
 					case TRAP:
-						printf("TRAP\n");
+						//printf("TRAP\n");
 						cpu->MDR = memory[cpu->MAR];
 						cpu->r[7] = cpu->buffers[1].PC;
 						break;
 					case NOP:
-						printf("NOP\n");
+						//printf("NOP\n");
 						break;
                 }
-				
-				cpu->buffers[1] = cpu->buffers[0];
-				cpu->buffers[1].A; //might need to take these out
-				cpu->buffers[1].B;
+				//cpu->buffers[2] = cpu->buffers[1];
+				//cpu->buffers[1] = cpu->buffers[0];
+				//cpu->buffers[1].A; //might need to take these out
+				//cpu->buffers[1].B;
                 state = FETCH;
 				break;
             case FETCH: // microstates 18, 33, 35 in the book
@@ -562,9 +606,11 @@ int controller (CPU_p cpu, int isRunning) {
 					//break;
                 
                 //state = STORE;
+				//cpu->buffers[1] = cpu->buffers[0];
 				state = STORE;
                 break;
         }
+		printAllBuffers(cpu);
 		if (!isRunning) {
 			//display(cpu, 0);
 			scanf("%c", &charToPrint);
@@ -604,7 +650,9 @@ void cpuInit(CPU_p cpu) {
 		cpu->buffers[i].Opcode = NOP;
 		cpu->buffers[i].A = NOP;
 		cpu->buffers[i].B = NOP;
+		cpu->buffers[i].SEXT = NOP;
 	}
+	printAllBuffers(cpu);
 }
 
 //returns 1 if true 0 if false
