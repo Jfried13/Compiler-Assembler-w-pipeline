@@ -2,7 +2,7 @@
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include "testingh.h"
+#include "tempslc3.h"
 
 int controller (CPU_p, int);
 
@@ -302,15 +302,17 @@ int controller (CPU_p cpu, int isRunning) {
 	char charToPrint = ' ';
 	char *temp;
 	int value = 0;
-    state = FETCH;
+    state = STORE;
 	int j;
 	
 	if(isRunning && encounteredBreakPont(cpu)) {
 		isRunning = 0;
 	}
     for (;;) {
+		//printf("here\n");
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
+				printf("STORE\n");
                 switch (cpu->buffers[3].Opcode) {
 					case ADD:
 						cpu->r[Rd] = cpu->buffers[3].A;
@@ -340,8 +342,11 @@ int controller (CPU_p cpu, int isRunning) {
 						memory[cpu->MAR] = cpu->MDR;
 						break;
 	                }
+				state = MEM;
+				break;
                 //state = FETCH;
 			case MEM:
+				printf("MEM\n");
 				switch (cpu->buffers[2].Opcode) {
 					case ST:
 					case STR:
@@ -358,7 +363,10 @@ int controller (CPU_p cpu, int isRunning) {
 				cpu->buffers[3] = cpu->buffers[2];
 				cpu->buffers[3].A = cpu->alu.A;
 				cpu->buffers[3].B = cpu->alu.B;
+				state = EXECUTE;
+				break;
 			case EXECUTE: // Note that ST does not have an execute microstate
+				printf("EXECUTE\n");
 				switch (cpu->buffers[1].Opcode) {
 					case ADD:
 						if (cpu->alu.A & HIGH_ORDER_BIT_VALUE15) {
@@ -431,7 +439,10 @@ int controller (CPU_p cpu, int isRunning) {
 				cpu->buffers[2] = cpu->buffers[1];
 				cpu->buffers[2].A;
 				cpu->buffers[2].B;
+				state = IDRR;
+				break;
 			case IDRR:
+				printf("IDRR\n");
 				cpu->buffers[1].Opcode = cpu->buffers[0].IR >> OPCODE_SHIFT;			//Decode Stage
 				cpu->buffers[1].Rd = cpu->buffers[0].IR & DR_MASK;
 				cpu->buffers[1].Rd = (short)cpu->buffers[1].Rd >> DR_SHIFT;
@@ -440,7 +451,7 @@ int controller (CPU_p cpu, int isRunning) {
 				cpu->buffers[1].B = cpu->buffers[1].B & SR2_MASK;
 				immed_offset = cpu->buffers[0].IR & SR_MASK;
 				BaseR = (cpu->buffers[0].IR & BASE_MASK) >> SR_SHIFT;
-				
+				printf("here\n");
 				//IDRR Buffer
 				
                 switch (cpu->buffers[1].Opcode) {							//Evaluate Address Stage
@@ -466,16 +477,19 @@ int controller (CPU_p cpu, int isRunning) {
 						cpu->MAR = immed_offset & TRAP_VECTOR_MASK;
 						break;
                 }
-
+				printf("here1\n");
                 switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
 					case LDR:
 					case LD:
-					 cpu->MDR = memory[cpu->MAR];
+						printf("LD/LDR\n");
+						cpu->MDR = memory[cpu->MAR];
 						break;
 					case LDI:
+						printf("LDI\n");
 						cpu->MDR = memory[cpu->MAR];
 						break;
 					case ADD:
+						printf("ADD\n");
 						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
 							cpu->buffers[2].A = cpu->r[cpu->buffers[1].A];
 							cpu->buffers[2].B = (immed_offset & SEXT5_MASK);
@@ -486,7 +500,8 @@ int controller (CPU_p cpu, int isRunning) {
 
 						break;
 					case AND:
-					if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
+						printf("AND\n");
+						if(HIGH_ORDER_BIT_VALUE6 & cpu->ir){ //0000|0000|0010|0000
 							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
 							cpu->buffers[1].B = (immed_offset & SEXT5_MASK);
 						} else{
@@ -495,24 +510,33 @@ int controller (CPU_p cpu, int isRunning) {
 						}
 						break;
 					case NOT:
+						printf("NOT\n");
 						cpu->A = cpu->r[cpu->buffers[1].A];
 						break;
 					case STR:
 					case ST:
+						printf("ST\n");
 						cpu->MDR = cpu->r[cpu->buffers[1].Rd];
 						break;
 					case STI:
+						printf("STI\n");
 						cpu->MDR = memory[cpu->MAR];
 						break;
 					case TRAP:
+						printf("TRAP\n");
 						cpu->MDR = memory[cpu->MAR];
 						cpu->r[7] = cpu->buffers[1].PC;
+					case NOP:
+						break;
                 }
+				
 				cpu->buffers[1] = cpu->buffers[0];
 				cpu->buffers[1].A; //might need to take these out
 				cpu->buffers[1].B;
-                state = EXECUTE;
+                state = FETCH;
+				break;
             case FETCH: // microstates 18, 33, 35 in the book
+				printf("FETCH\n");
 				cpu->MAR = (cpu->PC - CONVERT_TO_DECIMAL);
 				cpu->PC++;	// increment PC
 				cpu->MDR = memory[cpu->MAR];
@@ -524,7 +548,7 @@ int controller (CPU_p cpu, int isRunning) {
 					//break;
                 
                 //state = STORE;
-            
+				state = STORE;
                 break;
         }
 		if (!isRunning) {
@@ -559,6 +583,14 @@ void cpuInit(CPU_p cpu) {
 	cpu->breakPoints[1] = AVAILABLE_BRKPT;
 	cpu->breakPoints[2] = AVAILABLE_BRKPT;
 	cpu->breakPoints[3] = AVAILABLE_BRKPT;
+	for (int i = 0; i < MAX_BUFFERS; i++) {
+		cpu->buffers[i].PC = NOP;
+		cpu->buffers[i].IR = NOP;
+		cpu->buffers[i].Rd = NOP;
+		cpu->buffers[i].Opcode = NOP;
+		cpu->buffers[i].A = NOP;
+		cpu->buffers[i].B = NOP;
+	}
 }
 
 //returns 1 if true 0 if false
