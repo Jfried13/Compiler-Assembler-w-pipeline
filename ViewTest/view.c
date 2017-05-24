@@ -45,6 +45,7 @@ int currentWindow = 0;
 
 void MainInputWindow();
 
+void refreshALlMain
 
 void displayTitle() {
     mvwprintw(MainWindow, 0, 28, "Welcome to LC3 Simulator");
@@ -124,31 +125,102 @@ void display(CPU_p cpu, int mem) {
     refresh();
 }
 
-void MainInputWindow() {
+void Loadfile(){
+    FILE * inputfile;
     char fileName[MAX_FILE_NAME];
+    mvwprintw(MainInput, 2, 1, "File Name:");
+    mvwscanw(MainInput, 2, 12, "%s", &fileName);
+//    mvwprintw(MainInput, 2, 35, "File name is:");
+//    mvwprintw(MainInput, 2, 49, fileName);
+
+    inputfile = fopen(fileName, "rw");
+    if (inputfile == NULL) {
+        mvwprintw(MainInput, 2, 35, "Couldnt open file!");
+        break;
+    }
+    int i = 0;
+    while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
+        if (i == 0) {
+            cpu->PC = memory[0];
+        }
+        i++;
+    }
+    isLoaded = 1;
+    refreshAllMain();
+    fclose(inputFile);
+    break;
+}
+void Exit(){
+    clear();
+    endwin();
+    exit(0);
+}
+
+void saveFile(){
+    mvwprintw(MainInput, 2, 1, "Cannot save without Loading Assembly Code First!");
+}
+
+void Edit(){
+    mvwprintw(MainInput, 2, 1, "Cannot edit without Loading Assembly Code First!");
+}
+
+void Step(){
+    mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
+}
+
+void displayMem(){
+    mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
+}
+
+void switchView(){
+    if (currentWindow == 0) {
+        DisplayCacheWindow();
+        mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
+    } else {
+        DisplayPiplineWindow();
+        mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
+    }
+}
+
+void Run(){
+    mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
+}
+
+void breakPoint(){
+    mvwprintw(MainInput, 2, 1, "Cannot use break points without Loading Assembly Code First!");
+}
+
+void MainInputWindow() {
+
     keypad(MainInput, true);
     box(MainInput, 0, 0);
-    char* choices[6] = {"Load", "Step", "Display Mem", "Switch View", "Run", "Exit"};
+    char* choices[9] = {"Load", "Save", "Step", "Display Mem", "(Un)set Brkpt", "Switch View", "Edit", "Run", "Exit"};
     int choice;
     int highlight = 0;
     while (1){
         mvwprintw(MainInput, 1, 1, "Select: ");
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 9; i++) {
             if (i == highlight)
                 wattron(MainInput, A_REVERSE);
 
             if (i == 0)
                 mvwprintw(MainInput, 1, 9, choices[i]);
             if (i == 1)
-                mvwprintw(MainInput, 1, 16, choices[i]);
+                mvwprintw(MainInput, 1, 14, choices[i]);
             if (i == 2)
-                mvwprintw(MainInput, 1, 23, choices[i]);
+                mvwprintw(MainInput, 1, 19, choices[i]);
             if (i == 3)
-                mvwprintw(MainInput, 1, 37, choices[i]);
+                mvwprintw(MainInput, 1, 24, choices[i]);
             if (i == 4)
-                mvwprintw(MainInput, 1, 51, choices[i]);
+                mvwprintw(MainInput, 1, 36, choices[i]);
             if (i == 5)
-                mvwprintw(MainInput, 1, 57, choices[i]);
+                mvwprintw(MainInput, 1, 50, choices[i]);
+            if (i == 6)
+                mvwprintw(MainInput, 1, 62, choices[i]);
+            if (i == 7)
+                mvwprintw(MainInput, 1, 67, choices[i]);
+            if (i == 8)
+                mvwprintw(MainInput, 1, 71, choices[i]);
             wattroff(MainInput, A_REVERSE);
         }
         choice = wgetch(MainInput);
@@ -160,41 +232,41 @@ void MainInputWindow() {
                 break;
             case KEY_RIGHT:
                 highlight++;
-                if (highlight == 6)
-                    highlight = 5;
+                if (highlight == 9)
+                    highlight = 8;
                 break;
             case ENTER_KEY:
                 wmove(MainInput, 2, 1);
                 wclrtoeol(MainInput);
                 mvwprintw(MainInput, 2, 77, "|");
+
                 if (choices[highlight] == "Load") {
-                    mvwprintw(MainInput, 2, 1, "File Name:");
-                    mvwscanw(MainInput, 2, 12, "%s", &fileName);
-                    mvwprintw(MainInput, 2, 35, "File name is:");
-                    mvwprintw(MainInput, 2, 49, fileName);
+                    Loadfile();
                 }
                 if (choices[highlight] == "Exit") {
-                    clear();
-                    endwin();
-                    exit(0);
+                    Exit();
+                }
+
+                if (choices[highlight] == "Save") {
+                    saveFile();
+                }
+                if (choices[highlight] == "Edit") {
+                    Edit();
                 }
                 if (choices[highlight] == "Step") {
-                    mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
+                    Step();
                 }
                 if (choices[highlight] == "Display Mem") {
-                    mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
+                    displayMem();
                 }
                 if (choices[highlight] == "Switch View") {
-                    if (currentWindow == 0) {
-                        DisplayCacheWindow();
-                        mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
-                    } else {
-                        DisplayPiplineWindow();
-                        mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
-                    }
+                    switchView();
                 }
                 if (choices[highlight] == "Run") {
-                    mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
+                    Run();
+                }
+                if (choices[highlight] ==  "(Un)set Brkpt") {
+                    breakPoint();
                 }
                 break;
             default:
