@@ -65,7 +65,8 @@
 #define SEXT5_SIGN_EXTEND 0xFFE0
 #define SEXT5_MASK 0x001F
 
-#define CONVERT_TO_DECIMAL 0x2FFF
+//may need to change this
+#define CONVERT_TO_DECIMAL 0x3000
 
 #define START_MEM 0x3000
 #define BOTTOM_HALF 0x3008
@@ -88,6 +89,7 @@
 #define MAX_FILE_NAME 100
 #define MAX_BREAKPOINTS 4
 #define MAX_BUFFERS 4
+#define PREFETCH_SIZE 8
 #define AVAILABLE_BRKPT 9999
 #define SEXT9_SIGN_EXTEND 0xFE00
 #define HIGH_ORDER_BIT_VALUE8 0x0080    // 0000 0000 1000 0000
@@ -114,6 +116,7 @@ typedef struct BUFFER {
 	Register A;		//16-bit value from Rs
 	Register B;		//16-bit value from either Rs2 or SEXT(immed)
 	Register SEXT;
+	int isStalled;
 }BUFF;
 
 typedef struct ALU {
@@ -121,6 +124,12 @@ typedef struct ALU {
 	Register B;
 	Register R;
 } ALU_s;
+
+typedef struct PREFETCH {
+	Register values[PREFETCH_SIZE];
+	int head;
+	int nopCount;
+} PRE;
 
 typedef struct CPU_s{
 	Register r[8];
@@ -134,6 +143,7 @@ typedef struct CPU_s{
 	char gotC;
 	unsigned short breakPoints[MAX_BUFFERS];
 	struct BUFFER buffers[MAX_BREAKPOINTS];
+	struct PREFETCH prefetch;
 } CPU_s, *CPU_p;
 
 

@@ -145,25 +145,25 @@ int displayScreen(CPU_p cpu, int mem) {
 	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
 	printf("\t\tRegisters \t\t    Memory\n");
 	int i = START_MEM + mem;
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
 
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[2 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[2 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[7 + mem]);
 
 	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
-	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[12 + mem]);
-	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[13 + mem]);
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
-	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[8 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[9 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[10 + mem]);
+	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[11 + mem]);
+	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[12 + mem]);
+	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[13 + mem]);
+	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[14 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[15 + mem]);
 	printf("\nPipeLine Info:\n");
 	printf("FBUFF: PC: %04x  IR: %04x\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
 	printf("DBUFF: Op: %04x  DR: %04x  SR1: %04x  SEXT/SR2: %04x\n", cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B);
@@ -183,6 +183,7 @@ int dialog(CPU_p cpu) {
 	//long newValue;
 	unsigned int placeInMemory;
 	unsigned short newValue; 
+	int dontDeleteThisGarbage = 0;
 	char newMemoryValue[4];
 	char * charPtr;
 	char fileName[MAX_FILE_NAME];
@@ -199,10 +200,8 @@ int dialog(CPU_p cpu) {
 						break;
 					}
 					int i = 0;
+					fscanf(inputFile, "%04X", &dontDeleteThisGarbage);
 					while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
-						if (i == 0) {
-							cpu->PC = memory[0];
-						}
 						i++;
 					}
 					isLoaded = 1;
@@ -332,6 +331,62 @@ void printAllBuffers(CPU_p cpu) {
 		printBuffer(cpu->buffers[i]);
 		printf("\n");
 	}
+}
+
+
+int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCheck, int collisionPos) {
+	int nopCount = 0;
+	
+	int Rd = (headOfPrefetch & DR_MASK) >> DR_SHIFT; //Gets destination register
+	int Rs1 = (collisionCheck & SR_MASK) >> SR_SHIFT; //Gets source register 1
+	int Rs2 = -1;
+	if (!((collisionCheck & HIGH_ORDER_BIT_VALUE5) || (collisionCheck & HIGH_ORDER_BIT_VALUE6) 
+		|| (collisionCheck & HIGH_ORDER_BIT_VALUE8) || (collisionCheck & HIGH_ORDER_BIT_VALUE9))) {   //Checks if this value is a sext.
+		Rs2 = collisionCheck & SR2_MASK; //Gets the source register 2 if not a sext.
+	}
+	
+	
+	if (Rd == Rs1 || (Rs2 >= 0 && Rd == Rs2)) {  //Checks if Rd is Rs1 or that Rd is Rs2 as long as Rs2 is not a sext.
+		nopCount = 4 - (collisionPos - headPos);
+	}	
+
+	return nopCount;
+}
+
+
+/*
+	This is our predecode that determines the next value that will be passed into the IR.
+*/
+Register predecode (CPU_p cpu) {
+	Register returnValue = 0;
+	int collision = 0, i = cpu->PC, j = 0;
+	if (cpu->prefetch.nopCount > 0) {
+		returnValue = NOP;
+		cpu->prefetch.nopCount--;
+	} else if (cpu->prefetch.head >= 8) {
+		for (; i < cpu->PC + 8; i++, j++) {
+			cpu->prefetch.values[j] = memory[i - CONVERT_TO_DECIMAL];
+		}			
+		cpu->prefetch.nopCount = 79;
+		returnValue = NOP;
+	}	
+	else {
+		for (int i = cpu->prefetch.head + 1; i < cpu->prefetch.head + 4 && i < PREFETCH_SIZE; i++) {
+			collision = checkForCollision(cpu->prefetch.values[cpu->prefetch.head], cpu->prefetch.head, cpu->prefetch.values[i], i);
+			if (collision) {
+				cpu->prefetch.nopCount = collision - 1;
+				returnValue = NOP;
+				break;
+			}
+		}
+		
+		if (!collision) {
+			returnValue = cpu->prefetch.values[cpu->prefetch.head];
+			cpu->prefetch.head++;
+		}
+	}
+	
+	return returnValue;
 }
 
 
@@ -610,6 +665,7 @@ int controller (CPU_p cpu, int isRunning) {
 				break;
             case FETCH: // microstates 18, 33, 35 in the book
 				printf("FETCH\n");
+				
 				cpu->buffers[0].A = (cpu->PC - CONVERT_TO_DECIMAL);
 				cpu->PC++;	// increment PC
 				cpu->buffers[0].B = memory[cpu->buffers[0].A];
