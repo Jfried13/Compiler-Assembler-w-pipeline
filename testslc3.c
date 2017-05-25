@@ -449,7 +449,7 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case TRAP:
 						//cpu->buffers[2].PC = cpu->MDR;
-						value = trap(cpu, cpu->buffers[1].B);
+						value = trap(cpu, cpu->buffers[2].B);
 						//cpu->buffers[2].PC = cpu->r[7];
 						//start NOP stall
 						if (value == 1) {
