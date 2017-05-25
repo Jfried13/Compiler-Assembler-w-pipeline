@@ -1,11 +1,16 @@
-/*
+c0/*
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include <curses.h>
-#include "view.c"
+#include "tempslc3.h"
 
 int controller (CPU_p, int);
+
+int displayScreen (CPU_p, int);
+
+int dialog (CPU_p cpu);
+
+char getch ();
 
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
@@ -94,11 +99,73 @@ void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos)
 
 
 /*
+	This function simulates the GETC trap command in assembly.
+*/
+char getch() {
+	char buf = 0;         
+	struct termios old = {0};         
+	if (tcgetattr(0, &old) < 0)                 
+		perror("tcsetattr()");         
+	old.c_lflag &= ~ICANON;         
+	old.c_lflag &= ~ECHO;         
+	old.c_cc[VMIN] = 1;         
+	old.c_cc[VTIME] = 0;         
+	if (tcsetattr(0, TCSANOW, &old) < 0)                 
+		perror("tcsetattr ICANON");        
+	if (read(0, &buf, 1) < 0)                 
+		perror ("read()");         
+	old.c_lflag |= ICANON;         
+	old.c_lflag |= ECHO;         
+	if (tcsetattr(0, TCSADRAIN, &old) < 0)                 
+		perror ("tcsetattr ~ICANON");         
+	return (buf); 
+}
+
+
+/*
+	This function displays the debug screen with LOAD, STEP, DISPLAY MEM, RUN, or EXIT
+	commands to use.
+*/
+int displayScreen(CPU_p cpu, int mem) {
+  printf("\n\n\n");
+	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
+	printf("\t\tRegisters \t\t    Memory\n");
+	int i = START_MEM + mem;
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[1 + mem]);
+
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[2 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[3 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[4 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[5 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[6 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[7 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[8 + mem]);
+
+	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
+	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[9 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[10 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[11 + mem]);
+	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[12 + mem]);
+	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[13 + mem]);
+	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
+	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
+<<<<<<< HEAD
+	printf("  Select: 1)Load,2)Save, 3)Step, 5)Display Mem 6)Edit, 7)Run, 9)Exit\n");
+=======
+	printf("  Select: 1)Load, 2)Save, 3)Step, 5)Display Mem, 6)Edit, 7)Run, 9)Exit\n");
+>>>>>>> master
+	return 0;
+}
+
+
+/*
 	This is the dialog function that provides the functionality to the choices shown in
 	the displayScreen.
 */
 int dialog(CPU_p cpu) {
 	int opNum = 0, isRunning = 0;
+	//long newValue;
 	unsigned int placeInMemory;
 	unsigned short newValue; 
 	char newMemoryValue[4];
@@ -124,14 +191,14 @@ int dialog(CPU_p cpu) {
 						i++;
 					}
 					isLoaded = 1;
-					//displayScreen(cpu, 0);
+					displayScreen(cpu, 0);
 					fclose(inputFile);
 					break;
 				case SAVE:
 					printf("Enter a file name to save to: ");
 					scanf("%s", &fileName);
 					writeMemory(fileName);
-					//displayScreen(cpu, 0);
+					displayScreen(cpu, 0);
 					break;
 				case STEP:
 					if (isLoaded == 1) {
@@ -149,23 +216,23 @@ int dialog(CPU_p cpu) {
 						memShift = 0;
 						break;
 					} else {
-						//displayScreen(cpu, memShift - START_MEM);
+						displayScreen(cpu, memShift - START_MEM);
 					}
 					break;
 				case EDIT:
 					printf("What memory address would you like to edit: ");
 					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - START_MEM + 1]);
+					printf("The contents of location %04x is  %04x\n", placeInMemory - START_MEM + 1c, memory[placeInMemory - START_MEM + 1]);
 					printf("What would you like the new value in location %04x to be: ", placeInMemory);
 					scanf("%s", &newMemoryValue);
 					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
 					memory[placeInMemory - START_MEM + 1] = newValue;
-					//displayScreen(cpu, placeInMemory - START_MEM - 7);
+					displayScreen(cpu, placeInMemory - START_MEM - 7);
 					break;
 				case RUN:
 					controller(cpu, 1);
-					//displayScreen(cpu, 0);
+					displayScreen(cpu, 0);
 					break;
 				case EXIT:
 					printf("Simulation Terminated.");
@@ -411,7 +478,7 @@ int controller (CPU_p cpu, int isRunning) {
                 break;
         }
 		if (!isRunning) {
-			//displayScreen(cpu, 0);
+			displayScreen(cpu, 0);
 			scanf("%c", &charToPrint);
 		}
     }
@@ -453,8 +520,8 @@ int checkIfFileExists(char* fileToCheckIfExists) {
 		fclose(filePtr);
 		return 1;
 	} else {
-        fclose(filePtr);
 		return 0;
+		fclose(filePtr);
 	}
 }
 
@@ -490,6 +557,7 @@ void writeMemory(char * fileToWriteToName) {
 	}
 }
 
+
 /*
 	This is the main function that starts the program off.
 */
@@ -500,7 +568,7 @@ int main(int argc, char* argv[]){
 	memShift = 0;
 	CPU_p cpu = malloc(sizeof(CPU_s));
 	cpuInit(cpu);
-    initializeWindow();
-    display(cpu, memShift);
+	displayScreen(cpu, memShift);
+	dialog(cpu);
 	return 0;
 }
