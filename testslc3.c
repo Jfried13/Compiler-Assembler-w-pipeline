@@ -2,7 +2,7 @@
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include "tempslc3.h"
+#include "Other crap/tempslc3.h"
 
 int controller (CPU_p, int);
 

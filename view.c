@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "tempslc3.h"
+#include "Other crap/tempslc3.h"
 //#include "slc3Pipe.c"
 
 // Created by Daniel Ivanov on 5/12/2017.
