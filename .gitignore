@@ -5,6 +5,7 @@
 .classpath
 .project
 
+
 /bin/
 /out/
 /cmake-build-debug/
@@ -17,7 +18,6 @@ a.hex
 *.stackdump
 *.out
 CMakeLists.txt
-
 CMakeLists.txt
 ./cmake-building-debug
 

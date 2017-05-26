@@ -328,6 +328,7 @@ void printBuffer(struct BUFFER buff) {
 
 void printAllBuffers(CPU_p cpu) {
 	for (int i = 0; i < MAX_BUFFERS; i++) {
+        printf("Buffer #: %d\n", i);
 		printBuffer(cpu->buffers[i]);
 		printf("\n");
 	}
@@ -357,9 +358,7 @@ int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCh
 		printf("the head POSITION!!!!5 = %d\n", headPos); 
 		nopCount = 4 - (collisionPos - headPos);
 		printf("nopCount = %i headPos = %i collisionPos = %i\n");
-	}	
-
-
+	}
 	return nopCount;
 }
 
@@ -397,23 +396,19 @@ Register predecode (CPU_p cpu) {
 		returnValue = NOP;
 	}	
 	else {
-			printf("or or here\n");
-
+		printf("or or here\n");
 		for (int i = cpu->prefetch.head + 1; i < cpu->prefetch.head + 4 && i < PREFETCH_SIZE; i++) {
 			printf("head = %d\n", cpu->prefetch.head);
-			collision = checkForCollision(cpu->prefetch.values[cpu->prefetch.head], cpu->prefetch.head, cpu->prefetch.values[i], i);
-			if (collision) {
+			collision = 5 * checkForCollision(cpu->prefetch.values[cpu->prefetch.head], cpu->prefetch.head, cpu->prefetch.values[i], i);
+			printf("\nThe collision is: %d\n", collision);
+            if (collision) {
 				printf("collision found\n");
-				cpu->prefetch.nopCount = collision - 1;
-				returnValue = NOP;
+				cpu->prefetch.nopCount = collision;
 				break;
 			}
 		}
-		
-		if (!collision) {
-			returnValue = cpu->prefetch.values[cpu->prefetch.head];
-			cpu->prefetch.head++;
-		}
+		returnValue = cpu->prefetch.values[cpu->prefetch.head];
+		cpu->prefetch.head++;
 	}
 	
 	return returnValue;
@@ -444,6 +439,7 @@ int controller (CPU_p cpu, int isRunning) {
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
 				printf("STORE   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
+                printf("Opcode: %d\n", cpu->buffers[3].Opcode);
                 switch (cpu->buffers[3].Opcode) {
 					case ADD:
 						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
@@ -463,7 +459,9 @@ int controller (CPU_p cpu, int isRunning) {
 						//chooseFlag (cpu, cc);
 						break;
 					case LEA:
+                        printf("\n\n\n\nx%04X\n\n", cpu->buffers[3].SEXT);
 						cpu->r[Rd] = cpu->buffers[3].PC + sext9(cpu->buffers[3].SEXT);
+                        //getch();
 						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
 						//cc = cpu->r[Rd];
 						//chooseFlag (cpu, cc);
@@ -473,29 +471,37 @@ int controller (CPU_p cpu, int isRunning) {
 						memory[cpu->buffers[3].A] = cpu->buffers[3].B;
 						break;
 	                }
+//                cpu->buffers[3] = cpu->buffers[2];
 				state = MEM;
 				break;
                 //state = FETCH;
 			case MEM:
-				printf("MEM   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
-				switch (cpu->buffers[2].Opcode) {
-					case ST:
-					case STR:
-					case STI:
-						//cpu->buffers[2].MAR = memory[cpu->buffers[2].MDR];
-						
-					case LD:
-					case LDR:
-					case LDI:
-					case LEA:
-						break;
-				}
-				//Do Mem work with EBuff (buffers[2]) here first.
-				cpu->buffers[3] = cpu->buffers[2];
-				//cpu->buffers[3].A = cpu->alu.A;
-				//cpu->buffers[3].B = cpu->alu.B;
-				state = EXECUTE;
-				break;
+                if (cpu->buffers[1].isStalled) {
+                    cpu->prefetch.head = PREFETCH_SIZE;
+                    cpu->buffers[0].Opcode = NOP;
+                    cpu->buffers[1].Opcode = NOP;
+//                    state = FETCH;
+                } else {
+                    printf("MEM   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
+                    switch (cpu->buffers[2].Opcode) {
+                        case ST:
+                        case STR:
+                        case STI:
+                            //cpu->buffers[2].MAR = memory[cpu->buffers[2].MDR];
+
+                        case LD:
+                        case LDR:
+                        case LDI:
+                        case LEA:
+                            break;
+                    }
+                    //Do Mem work with EBuff (buffers[2]) here first.
+                    //cpu->buffers[3].A = cpu->alu.A;
+                    //cpu->buffers[3].B = cpu->alu.B;
+                }
+                state = EXECUTE;
+                cpu->buffers[3] = cpu->buffers[2];
+                break;
 			case EXECUTE: // Note that ST does not have an execute microstate
 				printf("EXECUTE   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
 				cpu->buffers[2].PC = cpu->buffers[1].PC;
@@ -523,6 +529,7 @@ int controller (CPU_p cpu, int isRunning) {
 						setCC(cpu, cpu->buffers[2].A);
 						//cc = cpu->Res;
 						//chooseFlag (cpu, cc);
+
 						break;
 					case NOT:
 						cpu->buffers[2].A = ~(cpu->buffers[1].A);
@@ -557,20 +564,27 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case BR:
 						if (cpu->N && (cpu->buffers[2].Rd & 4)) {
-							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
+							cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
+//                            cpu->buffers[0].isStalled = 1;
+                            cpu->buffers[1].isStalled = 1;
 							break;
 						}
 						if (cpu->Z && (cpu->buffers[2].Rd & 2)) {
-							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
+							cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
+//                            cpu->buffers[0].isStalled = 1;
+                            cpu->buffers[1].isStalled = 1;
 							break;
 						}
 						if (cpu->P && (cpu->buffers[2].Rd & 1)) {
-							cpu->buffers[2].PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
+							cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
+//                            cpu->buffers[0].isStalled = 1;
+                            cpu->buffers[1].isStalled = 1;
+
 							break;
 						}
 					case NOP:
 						break;
-					case LEA:
+                    case LEA:
 						cpu->buffers[2].A = cpu->buffers[1].PC + sext9(cpu->buffers[1].SEXT);
 						break;
 				}
@@ -578,8 +592,13 @@ int controller (CPU_p cpu, int isRunning) {
 				//cpu->buffers[2] = cpu->buffers[1];
 				//cpu->buffers[2].A;
 				//cpu->buffers[2].B;
-				state = IDRR;
-				break;
+                if(cpu->buffers[1].isStalled) {
+//                    cpu->buffers[2].Opcode = NOP;
+                    state = STORE;
+                } else {
+                    state = IDRR;
+                }
+                break;
 			case IDRR:
 				printf("IDRR   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
 				cpu->buffers[1].PC = cpu->buffers[0].PC;
@@ -592,14 +611,16 @@ int controller (CPU_p cpu, int isRunning) {
 				cpu->buffers[1].SEXT = cpu->buffers[0].IR & SR_MASK;
 				//immed_offset = cpu->buffers[0].IR & SR_MASK;
 				BaseR = (cpu->buffers[0].IR & BASE_MASK) >> SR_SHIFT;
-				//printf("here\n");
+				printf("here\n");
 				//IDRR Buffer
-				//printBuffer(cpu->buffers[1]);
+//				printBuffer(cpu->buffers[1]);
                 switch (cpu->buffers[1].Opcode) {							//Evaluate Address Stage
 					case LDR:
-						//printf("LDR\n");
-						//printf("%04X = (%04X + %04X) - %d\n", (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL, cpu->r[BaseR], sext6(cpu->buffers[1].SEXT), CONVERT_TO_DECIMAL);
-						cpu->buffers[1].A = (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL;
+						printf("LDR\n");
+						printf("%04X = (%04X + %04X) - %d\n", (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL, cpu->r[BaseR], sext6(cpu->buffers[1].SEXT), CONVERT_TO_DECIMAL);
+
+                        cpu->buffers[1].A = (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL;
+                        printf("Yo dog");
 						break;
 					case LD:
 						//printf("LD\n");
@@ -628,7 +649,7 @@ int controller (CPU_p cpu, int isRunning) {
 						//printf("%04X\n", cpu->buffers[1].B);
 						break;
 					case NOP:
-						//printf("NOP\n");
+						printf("NOP\n");
 						break;
                 }
 
@@ -685,7 +706,7 @@ int controller (CPU_p cpu, int isRunning) {
 						cpu->r[7] = cpu->buffers[1].PC;
 						break;
 					case NOP:
-						//printf("NOP\n");
+						printf("NOP2\n");
 						break;
                 }
 				//cpu->buffers[2] = cpu->buffers[1];
@@ -705,7 +726,15 @@ int controller (CPU_p cpu, int isRunning) {
 					cc = 0;
 					cpu->buffers[0].PC = cpu->PC;  //IF Buffer
 					cpu->buffers[0].IR = predecodeValue;
-				}
+				} else {
+                    cpu->buffers[0].A = NOP;
+                   // cpu->PC++;	// increment PC
+                    cpu->buffers[0].B = NOP;
+                    cpu->ir = NOP;
+                    cc = 0;
+                    cpu->buffers[0].PC = NOP;  //IF Buffer
+                    cpu->buffers[0].IR = NOP;
+                }
                // state = IDRR;     
 					//break;
                 
@@ -764,6 +793,7 @@ void cpuInit(CPU_p cpu) {
 		cpu->buffers[i].A = NOP;
 		cpu->buffers[i].B = NOP;
 		cpu->buffers[i].SEXT = NOP;
+        cpu->buffers[i].isStalled = 0;
 	}
 	printAllBuffers(cpu);
 }
