@@ -80,6 +80,8 @@
 unsigned short memory[MAX_MEMORY];
 
 typedef unsigned short Register;
+
+
 //cpu a b res mar mdr
 // lc3.c
 typedef struct CPU_s{
@@ -93,3 +95,5 @@ typedef struct CPU_s{
 	char gotC;
 	unsigned short breakPoints[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;
+
+int controller(CPU_p, int);

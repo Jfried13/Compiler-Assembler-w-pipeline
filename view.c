@@ -16,7 +16,6 @@ WINDOW *MemoryWindow;
 WINDOW *CPUWindow;
 WINDOW *MainInput;
 WINDOW *Pipeline;
-WINDOW *CacheWindow;
 
 // 0 for pipline window, 1 for cache window
 int currentWindow = 0;
@@ -24,9 +23,6 @@ int loaded = 0;
 
 #define PHEIGHT 18
 #define PWIDTH 48
-
-#define CHEIGHT 18
-#define CWIDTH 48
 
 #define INPUTHEIGHT 4
 #define INPUTWIDTH 78
@@ -112,17 +108,9 @@ void DisplayPipelineWindow(CPU_p cpu) {
 	mvwprintw(Pipeline, 6, 4, "DBUFF: Op:  DR:  SR1:  SEXT/SR2:");
 	mvwprintw(Pipeline, 7, 11, "0x%X  0x%X  0x%X   0x%X", cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B);
 	mvwprintw(Pipeline, 9, 4, "EBUFF: Op:  DR:  RESULT:");
-    printw("lhello");
 	mvwprintw(Pipeline, 10, 11, "0x%X  0x%X  0x%X", cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].B);
 	mvwprintw(Pipeline, 12, 4, "MBUFF: Op:  DR:  RESULT:");
 	mvwprintw(Pipeline, 13, 11, "0x%X  0x%X  0x%X", cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].B);
-    wrefresh(Pipeline);
-}
-
-void DisplayCacheWindow(){
-    currentWindow = 1;
-    box(Pipeline, 0, 0);
-    mvwprintw(Pipeline, 0, 15, "Cache Info:");
     wrefresh(Pipeline);
 }
 
@@ -136,6 +124,15 @@ void display(CPU_p cpu, int mem) {
     MainInputWindow(cpu);
     refresh();
 }
+void refreshWindows(){
+    wrefresh(MainWindow);
+    wrefresh(MainInput);
+    wrefresh(RegisterWindow);
+    wrefresh(IOWindow);
+    wrefresh(CPUWindow);
+    wrefresh(MemoryWindow);
+    wrefresh(Pipeline);
+}
 
 void MainInputWindow(CPU_p cpu) {
 	FILE *inputFile;
@@ -144,13 +141,13 @@ void MainInputWindow(CPU_p cpu) {
     keypad(MainInput, true);
     box(MainInput, 0, 0);
     char *ptr;
-    char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Switch_View", "Edit", "Run", "Set_Brkpts", "Exit"};
+    char* choices[9] = {"Load", "Save", "Step", "Dsply_Mem", "Edit", "Run", "Set_Brkpts", "Exit"};
     int choice, i = 0, garbage = 0;
     int highlight = 0;
 	//int loaded = 0;
     while (1){
         mvwprintw(MainInput, 1, 1, "Select: ");
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 8; i++) {
             if (i == highlight)
                 wattron(MainInput, A_REVERSE);
 
@@ -165,13 +162,11 @@ void MainInputWindow(CPU_p cpu) {
             if (i == 4)
                 mvwprintw(MainInput, 1, 38, choices[i]);
             if (i == 5)
-                mvwprintw(MainInput, 1, 51, choices[i]);
+                mvwprintw(MainInput, 1, 45, choices[i]);
             if (i == 6)
-                mvwprintw(MainInput, 1, 57, choices[i]);
+                mvwprintw(MainInput, 1, 50, choices[i]);
             if (i == 7)
                 mvwprintw(MainInput, 1, 62, choices[i]);
-            if (i == 8)
-                mvwprintw(MainInput, 1, 73, choices[i]);
             wattroff(MainInput, A_REVERSE);
         }
         choice = wgetch(MainInput);
@@ -183,8 +178,8 @@ void MainInputWindow(CPU_p cpu) {
                 break;
             case KEY_RIGHT:
                 highlight++;
-                if (highlight == 9)
-                    highlight = 8;
+                if (highlight == 8)
+                    highlight = 7;
                 break;
             case ENTER_KEY:
                 wmove(MainInput, 2, 1);
@@ -202,14 +197,14 @@ void MainInputWindow(CPU_p cpu) {
 							i++;
 						}
 					
-                    mvwprintw(MainInput, 2, 35, "File name is:");
-                    mvwprintw(MainInput, 2, 49, fileName);
+//                    mvwprintw(MainInput, 2, 35, "File name is:");
+//                    mvwprintw(MainInput, 2, 49, fileName);
 					loaded = 1;
 					MemWindow(0);
 					} else {
 						mvwprintw(MainInput, 2, 35, "Invalid File");
 					}
-						
+                    refreshWindows();
                 }
                 if (choices[highlight] == "Exit") {
                     clear();
@@ -229,7 +224,7 @@ void MainInputWindow(CPU_p cpu) {
                     newValue = (short)strtol(newMemoryValue, &ptr, 16);
                     memory[placeInMemory - START_MEM] = newValue;
                     MemWindow(0);
-					
+                    refreshWindows();
                 }
 				if (choices[highlight] == "Save") {
                      //mvwprintw(MainInput, 2, 1, "Save Selected");
@@ -243,6 +238,7 @@ void MainInputWindow(CPU_p cpu) {
                      mvwscanw(MainInput, 2, 12, "%s", &fileName);
                      mvwprintw(MainInput, 2, 20, "File to save:");
                      writeMemory(fileName);
+                    refreshWindows();
                 }
 				
                 if (choices[highlight] == "Step") {
@@ -250,35 +246,30 @@ void MainInputWindow(CPU_p cpu) {
 						mvwprintw(MainInput, 2, 1, "Cannot step without Loading Assembly Code First!");
 						display(cpu, 0);
 					} else {
-						controller(cpu, 0);
-						display(cpu, 0);
+                        mvwprintw(MainInput, 2, 1, "Loaded Step!");
+						//controller(cpu, 0);
+						//display(cpu, 0);
+//                        refreshWindows();
 					}
-					
+
                 }
                 if (choices[highlight] == "Dsply_Mem") {
                     mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
 					display(cpu, 0);
+                    refreshWindows();
 
-                }
-                if (choices[highlight] == "Switch_View") {
-                    if (currentWindow == 0) {
-                        DisplayCacheWindow();
-                        mvwprintw(MainInput, 2, 1, "Cache Info Window Displayed!");
-                    } else {
-                        DisplayPipelineWindow(cpu);
-                        mvwprintw(MainInput, 2, 1, "Pipeline Info Window Displayed!");
-                    }
                 }
 				
 				 if (choices[highlight] == "Set_Brkpts") {
                     mvwprintw(MainInput, 2, 1, "Reached stbrk");
+                     refreshWindows();
                 }
 				
                 if (choices[highlight] == "Run") {
                     mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
 					controller(cpu, 1);
 					display(cpu, 0);
-
+                    refreshWindows();
 
                 }
                 break;
@@ -297,7 +288,6 @@ void initializeWindow() {
     CPUWindow = newwin(CPUHeight, CPUWidth, 11, 1);
     MainInput = newwin(INPUTHEIGHT, INPUTWIDTH, 20, 1);
     Pipeline = newwin(PHEIGHT,PWIDTH, 1, 15);
-    CacheWindow = newwin(PHEIGHT,PWIDTH, 1, 15);
 }
 
 /*

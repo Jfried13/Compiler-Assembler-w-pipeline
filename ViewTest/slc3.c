@@ -5,8 +5,6 @@
 #include <curses.h>
 #include "view.c"
 
-int controller (CPU_p, int);
-
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
 void writeMemory(char * fileToWriteToName);
@@ -445,50 +443,50 @@ void cpuInit(CPU_p cpu) {
 	cpu->breakPoints[3] = AVAILABLE_BRKPT;
 }
 
-//returns 1 if true 0 if false
-int checkIfFileExists(char* fileToCheckIfExists) {
-	FILE* filePtr;
-	filePtr = fopen(fileToCheckIfExists, "r+");
-	if(filePtr != NULL) {
-		fclose(filePtr);
-		return 1;
-	} else {
-        fclose(filePtr);
-		return 0;
-	}
-}
+////returns 1 if true 0 if false
+//int checkIfFileExists(char* fileToCheckIfExists) {
+//	FILE* filePtr;
+//	filePtr = fopen(fileToCheckIfExists, "r+");
+//	if(filePtr != NULL) {
+//		fclose(filePtr);
+//		return 1;
+//	} else {
+//        fclose(filePtr);
+//		return 0;
+//	}
+//}
 
-//need to #define TRAP25 61477;
-void writeMemory(char * fileToWriteToName) {
-	FILE * filePtr;
-	int TRAP25 = 61477;
-	unsigned int memoryStart, memoryEnd; 
-	//the file exists so promt the user to see if they 
-	//are ok with overwritting the preexisting file right here
-	//include if/else statement to check user decision for overwriting
-	if(checkIfFileExists(fileToWriteToName)) {
-
-		filePtr = fopen(fileToWriteToName, "w");
-		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
-		}
-		fclose(filePtr);
-
-	//the file doesn't exist so create the new file and write to it
-	} else {
-		FILE * filePtr;
-		filePtr = fopen(fileToWriteToName, "w");
-		printf("Enter the beginning and end of the memory to save: ");
-		scanf("%4x %4x", &memoryStart, &memoryEnd);
-		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
-		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
-		}
-		fclose(filePtr);
-	}
-}
+////need to #define TRAP25 61477;
+//void writeMemory(char * fileToWriteToName) {
+//	FILE * filePtr;
+//	int TRAP25 = 61477;
+//	unsigned int memoryStart, memoryEnd;
+//	//the file exists so promt the user to see if they
+//	//are ok with overwritting the preexisting file right here
+//	//include if/else statement to check user decision for overwriting
+//	if(checkIfFileExists(fileToWriteToName)) {
+//
+//		filePtr = fopen(fileToWriteToName, "w");
+//		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
+//			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+//			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+//		}
+//		fclose(filePtr);
+//
+//	//the file doesn't exist so create the new file and write to it
+//	} else {
+//		FILE * filePtr;
+//		filePtr = fopen(fileToWriteToName, "w");
+//		printf("Enter the beginning and end of the memory to save: ");
+//		scanf("%4x %4x", &memoryStart, &memoryEnd);
+//		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
+//		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
+//			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+//			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+//		}
+//		fclose(filePtr);
+//	}
+//}
 
 /*
 	This is the main function that starts the program off.
