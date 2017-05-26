@@ -336,21 +336,39 @@ void printAllBuffers(CPU_p cpu) {
 
 int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCheck, int collisionPos) {
 	int nopCount = 0;
-	
+	printf("the head POSITION!!!! = %d\n", headPos); 
 	int Rd = (headOfPrefetch & DR_MASK) >> DR_SHIFT; //Gets destination register
 	int Rs1 = (collisionCheck & SR_MASK) >> SR_SHIFT; //Gets source register 1
 	int Rs2 = -1;
+		printf("the head POSITION!!!!2 = %d\n", headPos); 
+
 	if (!((collisionCheck & HIGH_ORDER_BIT_VALUE5) || (collisionCheck & HIGH_ORDER_BIT_VALUE6) 
 		|| (collisionCheck & HIGH_ORDER_BIT_VALUE8) || (collisionCheck & HIGH_ORDER_BIT_VALUE9))) {   //Checks if this value is a sext.
 		Rs2 = collisionCheck & SR2_MASK; //Gets the source register 2 if not a sext.
 	}
-	
+		printf("the head POSITION!!!!3 = %d\n", headPos); 
+
+	printf("head = %04X   collisionCheck = %04X\n", headOfPrefetch, collisionCheck); 
+	printf("Rd = %i Rs1 = %i  Rs2 = %i\n", Rd, Rs1, Rs2);
+	printf("the head POSITION!!!!4 = %d\n", headPos); 
+
 	
 	if (Rd == Rs1 || (Rs2 >= 0 && Rd == Rs2)) {  //Checks if Rd is Rs1 or that Rd is Rs2 as long as Rs2 is not a sext.
+		printf("the head POSITION!!!!5 = %d\n", headPos); 
 		nopCount = 4 - (collisionPos - headPos);
+		printf("nopCount = %i headPos = %i collisionPos = %i\n");
 	}	
 
+
 	return nopCount;
+}
+
+void printPrefetch (CPU_p cpu) {
+	printf("\n");
+	for (int i = 0; i < PREFETCH_SIZE; i++) {
+		printf("\t 0x%04X\n", cpu->prefetch.values[i]);
+	}
+	printf("\n");
 }
 
 
@@ -361,19 +379,31 @@ Register predecode (CPU_p cpu) {
 	Register returnValue = 0;
 	int collision = 0, i = cpu->PC, j = 0;
 	if (cpu->prefetch.nopCount > 0) {
+		printf("\n %d \n", cpu->prefetch.nopCount);
+			printf("here\n");
+
 		returnValue = NOP;
-		cpu->prefetch.nopCount--;
 	} else if (cpu->prefetch.head >= 8) {
+			printf("or here\n");
+
+		printPrefetch(cpu);
 		for (; i < cpu->PC + 8; i++, j++) {
+			
 			cpu->prefetch.values[j] = memory[i - CONVERT_TO_DECIMAL];
-		}			
+		}		
+		cpu->prefetch.head = 0;
+		printPrefetch(cpu);
 		cpu->prefetch.nopCount = 79;
 		returnValue = NOP;
 	}	
 	else {
+			printf("or or here\n");
+
 		for (int i = cpu->prefetch.head + 1; i < cpu->prefetch.head + 4 && i < PREFETCH_SIZE; i++) {
+			printf("head = %d\n", cpu->prefetch.head);
 			collision = checkForCollision(cpu->prefetch.values[cpu->prefetch.head], cpu->prefetch.head, cpu->prefetch.values[i], i);
 			if (collision) {
+				printf("collision found\n");
 				cpu->prefetch.nopCount = collision - 1;
 				returnValue = NOP;
 				break;
@@ -400,9 +430,10 @@ int controller (CPU_p cpu, int isRunning) {
 	unsigned int opcode, Rd, Rs1, Rs2, immed_offset, BaseR;	// fields for the IR
 	char charToPrint = ' ';
 	char *temp;
-	int value = 0;
+	int value = 0, stepCounter = 1;
     state = STORE;
 	int j;
+	Register predecodeValue = 0;
 	
 	if(isRunning && encounteredBreakPont(cpu)) {
 		isRunning = 0;
@@ -412,7 +443,7 @@ int controller (CPU_p cpu, int isRunning) {
 		
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
-				printf("STORE\n");
+				printf("STORE   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
                 switch (cpu->buffers[3].Opcode) {
 					case ADD:
 						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
@@ -446,7 +477,7 @@ int controller (CPU_p cpu, int isRunning) {
 				break;
                 //state = FETCH;
 			case MEM:
-				printf("MEM\n");
+				printf("MEM   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
 				switch (cpu->buffers[2].Opcode) {
 					case ST:
 					case STR:
@@ -466,7 +497,7 @@ int controller (CPU_p cpu, int isRunning) {
 				state = EXECUTE;
 				break;
 			case EXECUTE: // Note that ST does not have an execute microstate
-				printf("EXECUTE\n");
+				printf("EXECUTE   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
 				cpu->buffers[2].PC = cpu->buffers[1].PC;
 				cpu->buffers[2].Rd = cpu->buffers[1].Rd;
 				switch (cpu->buffers[1].Opcode) {
@@ -550,7 +581,7 @@ int controller (CPU_p cpu, int isRunning) {
 				state = IDRR;
 				break;
 			case IDRR:
-				printf("IDRR\n");
+				printf("IDRR   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
 				cpu->buffers[1].PC = cpu->buffers[0].PC;
 				cpu->buffers[1].Opcode = cpu->buffers[0].IR >> OPCODE_SHIFT;			//Decode Stage
 				cpu->buffers[1].Rd = cpu->buffers[0].IR & DR_MASK;
@@ -664,16 +695,18 @@ int controller (CPU_p cpu, int isRunning) {
                 state = FETCH;
 				break;
             case FETCH: // microstates 18, 33, 35 in the book
-				printf("FETCH\n");
-				
-				cpu->buffers[0].A = (cpu->PC - CONVERT_TO_DECIMAL);
-				cpu->PC++;	// increment PC
-				cpu->buffers[0].B = memory[cpu->buffers[0].A];
-				cpu->ir = cpu->buffers[0].B;
-				cc = 0;
-				cpu->buffers[0].PC = cpu->PC;		//IF Buffer
-				cpu->buffers[0].IR = cpu->ir;
-                state = IDRR;     
+				printf("FETCH   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
+				predecodeValue = predecode(cpu);
+				if (predecodeValue != NOP) {
+					cpu->buffers[0].A = (cpu->PC - CONVERT_TO_DECIMAL);
+					cpu->PC++;	// increment PC
+					cpu->buffers[0].B = memory[cpu->buffers[0].A];
+					cpu->ir = cpu->buffers[0].B;
+					cc = 0;
+					cpu->buffers[0].PC = cpu->PC;  //IF Buffer
+					cpu->buffers[0].IR = predecodeValue;
+				}
+               // state = IDRR;     
 					//break;
                 
                 //state = STORE;
@@ -686,6 +719,9 @@ int controller (CPU_p cpu, int isRunning) {
 			//display(cpu, 0);
 			scanf("%c", &charToPrint);
 		}
+		stepCounter++;
+		cpu->prefetch.nopCount--;
+
     }
 }
 
@@ -714,6 +750,12 @@ void cpuInit(CPU_p cpu) {
 	cpu->breakPoints[1] = AVAILABLE_BRKPT;
 	cpu->breakPoints[2] = AVAILABLE_BRKPT;
 	cpu->breakPoints[3] = AVAILABLE_BRKPT;
+	cpu->prefetch.head = 8;
+	cpu->prefetch.nopCount = 0;
+	for (int i = 0; i < PREFETCH_SIZE; i++) {
+		cpu->prefetch.values[i] = NOP;
+	}
+	
 	for (int i = 0; i < MAX_BUFFERS; i++) {
 		cpu->buffers[i].PC = NOP;
 		cpu->buffers[i].IR = NOP;
