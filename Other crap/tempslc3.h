@@ -117,6 +117,9 @@ typedef struct BUFFER {
 	Register B;		//16-bit value from either Rs2 or SEXT(immed)
 	Register SEXT;
 	int isStalled;
+	int N;
+	int Z;
+	int P;
 }BUFF;
 
 typedef struct ALU {
