@@ -337,27 +337,27 @@ void printAllBuffers(CPU_p cpu) {
 
 int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCheck, int collisionPos) {
 	int nopCount = 0;
-	printf("the head POSITION!!!! = %d\n", headPos); 
+	//printf("the head POSITION!!!! = %d\n", headPos); 
 	int Rd = (headOfPrefetch & DR_MASK) >> DR_SHIFT; //Gets destination register
 	int Rs1 = (collisionCheck & SR_MASK) >> SR_SHIFT; //Gets source register 1
 	int Rs2 = -1;
-		printf("the head POSITION!!!!2 = %d\n", headPos); 
+		//printf("the head POSITION!!!!2 = %d\n", headPos); 
 
 	if (!((collisionCheck & HIGH_ORDER_BIT_VALUE5) || (collisionCheck & HIGH_ORDER_BIT_VALUE6) 
 		|| (collisionCheck & HIGH_ORDER_BIT_VALUE8) || (collisionCheck & HIGH_ORDER_BIT_VALUE9))) {   //Checks if this value is a sext.
 		Rs2 = collisionCheck & SR2_MASK; //Gets the source register 2 if not a sext.
 	}
-		printf("the head POSITION!!!!3 = %d\n", headPos); 
+		//printf("the head POSITION!!!!3 = %d\n", headPos); 
 
-	printf("head = %04X   collisionCheck = %04X\n", headOfPrefetch, collisionCheck); 
-	printf("Rd = %i Rs1 = %i  Rs2 = %i\n", Rd, Rs1, Rs2);
-	printf("the head POSITION!!!!4 = %d\n", headPos); 
+	//printf("head = %04X   collisionCheck = %04X\n", headOfPrefetch, collisionCheck); 
+	//printf("Rd = %i Rs1 = %i  Rs2 = %i\n", Rd, Rs1, Rs2);
+	//printf("the head POSITION!!!!4 = %d\n", headPos); 
 
 	
 	if (Rd == Rs1 || (Rs2 >= 0 && Rd == Rs2)) {  //Checks if Rd is Rs1 or that Rd is Rs2 as long as Rs2 is not a sext.
-		printf("the head POSITION!!!!5 = %d\n", headPos); 
+		//printf("the head POSITION!!!!5 = %d\n", headPos); 
 		nopCount = 4 - (collisionPos - headPos);
-		printf("nopCount = %i headPos = %i collisionPos = %i\n");
+		//printf("nopCount = %i headPos = %i collisionPos = %i\n");
 	}
 	return nopCount;
 }
@@ -375,15 +375,11 @@ void printPrefetch (CPU_p cpu) {
 	This is our predecode that determines the next value that will be passed into the IR.
 */
 Register predecode (CPU_p cpu) {
+
 	Register returnValue = 0;
 	int collision = 0, i = cpu->PC, j = 0;
-	if (cpu->prefetch.nopCount > 0) {
-		printf("\n %d \n", cpu->prefetch.nopCount);
-			printf("here\n");
-
-		returnValue = NOP;
-	} else if (cpu->prefetch.head >= 8) {
-			printf("or here\n");
+	 if (cpu->prefetch.head >= 8) {
+			//printf("or here\n");
 
 		printPrefetch(cpu);
 		for (; i < cpu->PC + 8; i++, j++) {
@@ -391,18 +387,22 @@ Register predecode (CPU_p cpu) {
 			cpu->prefetch.values[j] = memory[i - CONVERT_TO_DECIMAL];
 		}		
 		cpu->prefetch.head = 0;
-		printPrefetch(cpu);
+		//printPrefetch(cpu);
 		cpu->prefetch.nopCount = 79;
 		returnValue = NOP;
-	}	
-	else {
-		printf("or or here\n");
+	}	else if (cpu->prefetch.nopCount > 0) {
+		//printf("\n %d \n", cpu->prefetch.nopCount);
+			//printf("here\n");
+
+		returnValue = NOP;
+	} else {
+		//printf("or or here\n");
 		for (int i = cpu->prefetch.head + 1; i < cpu->prefetch.head + 4 && i < PREFETCH_SIZE; i++) {
-			printf("head = %d\n", cpu->prefetch.head);
+			//printf("head = %d\n", cpu->prefetch.head);
 			collision = 5 * checkForCollision(cpu->prefetch.values[cpu->prefetch.head], cpu->prefetch.head, cpu->prefetch.values[i], i);
-			printf("\nThe collision is: %d\n", collision);
+			//printf("\nThe collision is: %d\n", collision);
             if (collision) {
-				printf("collision found\n");
+				//printf("collision found\n");
 				cpu->prefetch.nopCount = collision;
 				break;
 			}
@@ -478,8 +478,11 @@ int controller (CPU_p cpu, int isRunning) {
 			case MEM:
                 if (cpu->buffers[1].isStalled) {
                     cpu->prefetch.head = PREFETCH_SIZE;
+					cpu->buffers[0].isStalled = 0;
                     cpu->buffers[0].Opcode = NOP;
+					cpu->buffers[1].isStalled = 0;
                     cpu->buffers[1].Opcode = NOP;
+					
 //                    state = FETCH;
                 } else {
                     printf("MEM   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
@@ -560,27 +563,31 @@ int controller (CPU_p cpu, int isRunning) {
 						//start NOP stall
 						break;
 					case JMP:
-						cpu->r[7] = cpu->buffers[2].PC;
-						cpu->buffers[2].PC = cpu->r[cpu->buffers[2].A];
+						//cpu->r[7] = cpu->buffers[2].PC;
+						cpu->PC = cpu->r[cpu->buffers[2].A];
+						cpu->prefetch.head = 8;
 						break;
 					case BR:
+						printf("made it to branch");
 						if (cpu->N && (cpu->buffers[2].Rd & 4)) {
 							cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
 //                            cpu->buffers[0].isStalled = 1;
                             cpu->buffers[1].isStalled = 1;
+							cpu->prefetch.head = 8;
 							break;
 						}
 						if (cpu->Z && (cpu->buffers[2].Rd & 2)) {
 							cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
 //                            cpu->buffers[0].isStalled = 1;
                             cpu->buffers[1].isStalled = 1;
+							cpu->prefetch.head = 8;
 							break;
 						}
 						if (cpu->P && (cpu->buffers[2].Rd & 1)) {
 							cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
 //                            cpu->buffers[0].isStalled = 1;
                             cpu->buffers[1].isStalled = 1;
-
+							cpu->prefetch.head = 8;
 							break;
 						}
 					case NOP:

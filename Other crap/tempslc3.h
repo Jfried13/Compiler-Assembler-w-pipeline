@@ -129,6 +129,7 @@ typedef struct PREFETCH {
 	Register values[PREFETCH_SIZE];
 	int head;
 	int nopCount;
+	Register PC;
 } PRE;
 
 typedef struct CPU_s{
