@@ -86,7 +86,7 @@
 
 #define TRAP_VECTOR_MASK 0x00FF
 
-#define MAX_FILE_NAME 100
+#define MAX_FILE_NAME 12
 #define MAX_BREAKPOINTS 4
 #define MAX_BUFFERS 4
 #define PREFETCH_SIZE 8

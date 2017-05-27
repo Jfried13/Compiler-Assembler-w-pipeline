@@ -453,14 +453,14 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case LDR:
 					case LD:
-						cpu->r[Rd] = cpu->MDR;
-						setCC(cpu, cpu->r[Rd]);
+                        cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].B;
+						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
 						//cc = cpu->r[Rd];
 						//chooseFlag (cpu, cc);
 						break;
 					case LEA:
                         printf("\n\n\n\nx%04X\n\n", cpu->buffers[3].SEXT);
-						cpu->r[Rd] = cpu->buffers[3].PC + sext9(cpu->buffers[3].SEXT);
+						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].PC + sext9(cpu->buffers[3].A);
                         //getch();
 						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
 						//cc = cpu->r[Rd];
@@ -506,6 +506,7 @@ int controller (CPU_p cpu, int isRunning) {
 				printf("EXECUTE   %d, %d\n", stepCounter, cpu->prefetch.nopCount);
 				cpu->buffers[2].PC = cpu->buffers[1].PC;
 				cpu->buffers[2].Rd = cpu->buffers[1].Rd;
+                cpu->buffers[2].Opcode = cpu->buffers[1].Opcode;
 				switch (cpu->buffers[1].Opcode) {
 					case ADD:
 						if (cpu->buffers[1].A & HIGH_ORDER_BIT_VALUE15) {
