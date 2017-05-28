@@ -56,14 +56,18 @@ int trap(CPU_p cpu, int trap_vector) {
 	//printf("\n");
 	//printf("in here\n");
 	//printf("%04X\n", trap_vector);
+	printf("Which TRAP?\n");
 	switch (trap_vector) {
 		case GETC:
+			printf("A GETC!\n");
 			value = (int) getch();
 			break;
 		case OUT:
+			printf("An OUT!\n");
 			printf("%c", cpu->gotC);
 			break;
 		case PUTS:
+			printf("A PUTS!\n");
 			i = 0;
 			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			while ((temp)) {  
@@ -73,6 +77,7 @@ int trap(CPU_p cpu, int trap_vector) {
 			}
 			break;
 		case HALT:
+			printf("A HALT!\n");
 			//printf("halt\n");
 			value = 1;
 			break;
@@ -431,6 +436,25 @@ Register predecode (CPU_p cpu) {
 }
 
 
+struct BUFFER initBuffer() {
+	struct BUFFER buff;
+	
+	buff.PC = NOP;
+	buff.IR = NOP;
+	buff.Rd = NOP;
+	buff.Opcode = NOP;
+	buff.A = NOP;
+	buff.B = NOP;
+	buff.SEXT = NOP;
+	buff.isStalled = 0;
+	buff.N = 0;
+	buff.Z = 0;
+	buff.P = 0;
+	
+	return buff;
+}
+
+
 /*
 	This is the main controller for the program. It takes a CPU struct and an int
 	which is being used as a boolean for displaying the screen.
@@ -480,8 +504,9 @@ int controller (CPU_p cpu, int isRunning) {
 						break;
 					case LEA:
                         //printf("\n\n\n\nx%04X\n\n", cpu->buffers[3].SEXT);
-						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].PC + sext9(cpu->buffers[3].A);
-                        //getch();
+						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
+                        printf("\nin reg[%d] = 0x%04X\n", cpu->buffers[3].Rd, cpu->r[cpu->buffers[3].Rd]);
+						//getch();
 						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
 						//cc = cpu->r[Rd];
 						//chooseFlag (cpu, cc);
@@ -501,12 +526,9 @@ int controller (CPU_p cpu, int isRunning) {
                 if (cpu->buffers[1].isStalled) {
 					printf("DBUFF is still stalled\n");
                     cpu->prefetch.head = PREFETCH_SIZE;
-					cpu->buffers[0].isStalled = 0;
-                    cpu->buffers[0].Opcode = NOP;
-					cpu->buffers[1].isStalled = 0;
-                    cpu->buffers[1].Opcode = NOP;
 					
-//                    state = FETCH;
+					cpu->buffers[0] = initBuffer();
+					cpu->buffers[1] = initBuffer();
                 } else {
                     switch (cpu->buffers[2].Opcode) {
                         case ST:
@@ -545,7 +567,10 @@ int controller (CPU_p cpu, int isRunning) {
 				if (cpu->buffers[1].PC == NOP) {
 					cpu->buffers[2] = cpu->buffers[1];
 				} else {
+					//printf("The buffer[1] B is = 0x%04X\n", cpu->buffers[1].B);
 					cpu->buffers[2] = cpu->buffers[1];
+					//printf("The buffer[2] B is = 0x%04X\n", cpu->buffers[2].B);
+
 					/*cpu->buffers[2].PC = cpu->buffers[1].PC;
 					cpu->buffers[2].Rd = cpu->buffers[1].Rd;
 					cpu->buffers[2].Opcode = cpu->buffers[1].Opcode;*/
@@ -585,10 +610,14 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case TRAP:
 							//cpu->buffers[2].PC = cpu->MDR;
+							cpu->r[7] = cpu->buffers[2].PC;
+							printf("It's a TRAP!\n");
 							value = trap(cpu, cpu->buffers[2].B);
 							//cpu->buffers[2].PC = cpu->r[7];
 							//start NOP stall
+							printf ("Our TRAP value is = %d\n", value);
 							if (value == 1) {
+								displayScreen(cpu, 0);
 								return 0;
 							} else if (value > 1) {
 								cpu->r[0] = (char) value;
@@ -598,12 +627,15 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case JSRR:
 							cpu->r[7] = cpu->buffers[2].PC;
-							cpu->buffers[2].PC = cpu->r[BaseR];
+							cpu->PC = cpu->r[BaseR];
+							cpu->buffers[1].isStalled = 1;
+							cpu->prefetch.head = 8;
 							//start NOP stall
 							break;
 						case JMP:
 							//cpu->r[7] = cpu->buffers[2].PC;
 							cpu->PC = cpu->r[cpu->buffers[2].A];
+							cpu->buffers[1].isStalled = 1;
 							cpu->prefetch.head = 8;
 							break;
 						case BR:
@@ -684,16 +716,19 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case LD:
 							//printf("LD\n");
-							cpu->buffers[1].A = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
+							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
 							break;
 						case LDI:
 							//printf("LDI\n");
-							cpu->buffers[1].A = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
+							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
+							break;
+						case LEA:
+							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
 							break;
 						case ST:
 							//printf("ST\n");
 							cpu->buffers[1].B = cpu->buffers[1].A;
-							cpu->buffers[1].A = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
+							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
 							break;
 						case STR:
 							//printf("STR\n");
@@ -703,11 +738,12 @@ int controller (CPU_p cpu, int isRunning) {
 						case STI:
 							//printf("STI\n");
 							cpu->buffers[1].B = cpu->buffers[1].A;
-							cpu->buffers[1].A = (cpu->PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
+							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
 							break;
 						case TRAP:
 							//printf("TRAP\n");
-							cpu->buffers[1].B = cpu->buffers[1].SEXT & TRAP_VECTOR_MASK;
+							cpu->buffers[1].B = cpu->buffers[1].SEXT;
+							printf("Our B value is = 0x%04X\n", cpu->buffers[1].B);
 							//printf("TRAP\n");
 							//printf("%04X\n", cpu->buffers[1].B);
 							break;
@@ -735,8 +771,8 @@ int controller (CPU_p cpu, int isRunning) {
 								//printf("%04X\n", cpu->buffers[1].B);
 							} else{
 								//change this
-								cpu->A = cpu->r[Rs1];
-								cpu->B = cpu->r[Rs2];
+								cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
+								cpu->buffers[1].B = cpu->r[cpu->buffers[1].B];
 							}
 
 							break;
@@ -752,7 +788,7 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case NOT:
 							//printf("NOT\n");
-							cpu->A = cpu->r[cpu->buffers[1].A];
+							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
 							break;
 						case STR:
 						case ST:
@@ -762,11 +798,6 @@ int controller (CPU_p cpu, int isRunning) {
 						case STI:
 							//printf("STI\n");
 							cpu->buffers[1].B = memory[cpu->buffers[1].A];
-							break;
-						case TRAP:
-							//printf("TRAP\n");
-							cpu->buffers[1].B = memory[cpu->buffers[1].A];
-							cpu->r[7] = cpu->buffers[1].PC;
 							break;
 						case NOP:
 							//printf("NOP2\n");
@@ -816,6 +847,7 @@ int controller (CPU_p cpu, int isRunning) {
 		cpu->prefetch.nopCount--;
 
     }
+	
 }
 
 /*
@@ -849,18 +881,12 @@ void cpuInit(CPU_p cpu) {
 		cpu->prefetch.values[i] = NOP;
 	}
 	
+	for (int i = 0; i < MAX_MEMORY; i++) {
+		memory[i] = NOP;
+	}
+	
 	for (int i = 0; i < MAX_BUFFERS; i++) {
-		cpu->buffers[i].PC = NOP;
-		cpu->buffers[i].IR = NOP;
-		cpu->buffers[i].Rd = NOP;
-		cpu->buffers[i].Opcode = NOP;
-		cpu->buffers[i].A = NOP;
-		cpu->buffers[i].B = NOP;
-		cpu->buffers[i].SEXT = NOP;
-        cpu->buffers[i].isStalled = 0;
-		cpu->buffers[i].N = 0;
-		cpu->buffers[i].Z = 0;
-		cpu->buffers[i].P = 0;
+		cpu->buffers[i] = initBuffer();
 	}
 	printAllBuffers(cpu);
 }
