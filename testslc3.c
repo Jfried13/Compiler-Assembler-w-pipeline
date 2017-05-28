@@ -6,7 +6,7 @@
 
 int controller (CPU_p, int);
 
-int displayScreen (CPU_p, int);
+int displayScreen (CPU_p, int, int, int, int, int, char *);
 
 int dialog (CPU_p cpu);
 
@@ -56,18 +56,18 @@ int trap(CPU_p cpu, int trap_vector) {
 	//printf("\n");
 	//printf("in here\n");
 	//printf("%04X\n", trap_vector);
-	printf("Which TRAP?\n");
+	//printf("Which TRAP?\n");
 	switch (trap_vector) {
 		case GETC:
-			printf("A GETC!\n");
+			//printf("A GETC!\n");
 			value = (int) getch();
 			break;
 		case OUT:
-			printf("An OUT!\n");
+			//printf("An OUT!\n");
 			printf("%c", cpu->gotC);
 			break;
 		case PUTS:
-			printf("A PUTS!\n");
+			//printf("A PUTS!\n");
 			i = 0;
 			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			while ((temp)) {  
@@ -77,7 +77,7 @@ int trap(CPU_p cpu, int trap_vector) {
 			}
 			break;
 		case HALT:
-			printf("A HALT!\n");
+			//printf("A HALT!\n");
 			//printf("halt\n");
 			value = 1;
 			break;
@@ -145,9 +145,14 @@ char getch() {
 	This function displays the debug screen with LOAD, STEP, DISPLAY MEM, RUN, or EXIT
 	commands to use.
 */
-int displayScreen(CPU_p cpu, int mem) {
-  printf("\n\n\n");
-	printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
+int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount, int collisionFound, char *stage) {
+	for (int i = 0; i < 100; i++) {
+		printf("\n");
+	}
+	
+	if (!isRunning) {
+		printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
+	}
 	printf("\t\tRegisters \t\t    Memory\n");
 	int i = START_MEM + mem;
 	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
@@ -169,12 +174,35 @@ int displayScreen(CPU_p cpu, int mem) {
 	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[13 + mem]);
 	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[14 + mem]);
 	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[15 + mem]);
-	printf("\nPipeLine Info:\n");
-	printf("FBUFF: PC: %04x  IR: %04x\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
-	printf("DBUFF: Op: %04x  DR: %04x  SR1: %04x  SEXT/SR2: %04x\n", cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B);
-	printf("EBUFF: Op: %04x DR: %04x  RESULT: %04x\n", cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].B);
-	printf("MBUFF: Op: %04x DR: %04x RESULT: %04x\n", cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].B);
-	printf("  Select: 1)Load,2)Save, 3)Step, 5)Display Mem 6)Edit, 7)Run, 9)Exit\n");
+	printf("\t\tStep: %d  NOP Count: %d\n\n", stepCount, nopCount);
+	if (collisionFound) {
+		printf("Collision Detected!\n");
+	} else {
+		printf("\n");
+	}
+	printf("\nPipeLine Info:\n\n");
+	if (isRunning) {
+		printf("Current Stage: %s\n", stage);
+	} else {
+		printf("\n");
+	}
+	
+	printf("FBUFF: PC: 0x%04X  IR: 0x%04X\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
+	printf("DBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  SR1: 0x%04X  SR2: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[1].PC, 
+			cpu->buffers[1].IR, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, 
+			cpu->buffers[1].B, cpu->buffers[1].SEXT, cpu->buffers[1].isStalled);
+	printf("EBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  SR1: 0x%04X  SR2: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[2].PC, 
+			cpu->buffers[2].IR, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, 
+			cpu->buffers[2].B, cpu->buffers[2].SEXT, cpu->buffers[2].isStalled);
+	printf("MBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  SR1: 0x%04X  SR2: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[3].PC, 
+			cpu->buffers[3].IR, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, 
+			cpu->buffers[3].B, cpu->buffers[3].SEXT, cpu->buffers[3].isStalled);	
+	
+	if (!isRunning) {
+		printf("\n1) Load,  2) Save,  3) Step,  4) Display Memory,  5) Edit,  6) Run,  7) (Un)Set Breakpts,  8) Exit\n");
+	} else {
+		printf("\nPress any key to step ");
+	}
 	return 0;
 }
 
@@ -210,14 +238,14 @@ int dialog(CPU_p cpu) {
 						i++;
 					}
 					isLoaded = 1;
-					displayScreen(cpu, 0);
+					displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					fclose(inputFile);
 					break;
 				case SAVE:
 					printf("Enter a file name to save to: ");
 					scanf("%s", &fileName);
 					writeMemory(fileName);
-					displayScreen(cpu, 0);
+					displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					break;
 				case STEP:
 					if (isLoaded == 1) {
@@ -235,7 +263,7 @@ int dialog(CPU_p cpu) {
 						memShift = 0;
 						break;
 					} else {
-						displayScreen(cpu, memShift - START_MEM);
+						displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
 					}
 					break;
 				case EDIT:
@@ -247,11 +275,11 @@ int dialog(CPU_p cpu) {
 					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
 					memory[placeInMemory - START_MEM + 1] = newValue;
-					displayScreen(cpu, placeInMemory - START_MEM - 7);
+					displayScreen(cpu, placeInMemory - START_MEM - 7, 0, 0, 0, 0, charPtr);
 					break;
 				case RUN:
 					controller(cpu, 1);
-					displayScreen(cpu, 0);
+					displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					break;
 				case EXIT:
 					printf("Simulation Terminated.");
@@ -399,6 +427,7 @@ Register predecode (CPU_p cpu) {
 
 	Register returnValue = 0;
 	int collision = 0, i = cpu->PC, j = 0;
+	cpu->prefetch.collisionFound = 0;
 	if (cpu->prefetch.head >= 8) {
 			//printf("or here\n");
 
@@ -423,7 +452,8 @@ Register predecode (CPU_p cpu) {
 			collision = 5 * checkForCollision(cpu->prefetch.values[cpu->prefetch.head], cpu->prefetch.head, cpu->prefetch.values[i], i);
 			//printf("\nThe collision is: %d\n", collision);
             if (collision) {
-				printf("collision found\n");
+				//printf("collision found\n");
+				cpu->prefetch.collisionFound = 1;
 				cpu->prefetch.nopCount = collision;
 				break;
 			}
@@ -464,7 +494,7 @@ int controller (CPU_p cpu, int isRunning) {
 	short cc;
 	unsigned int opcode, Rd, Rs1, Rs2, immed_offset, BaseR;	// fields for the IR
 	char charToPrint = ' ';
-	char *temp;
+	char *temp = malloc(sizeof(char) * 8);
 	int value = 0, stepCounter = 1;
     state = STORE;
 	int j;
@@ -478,7 +508,8 @@ int controller (CPU_p cpu, int isRunning) {
 		
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
-				printf("STORE   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
+				strcpy(temp, "STORE");
+				//printf("STORE   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
                 //printf("Opcode: %d\n", cpu->buffers[3].Opcode);
                 switch (cpu->buffers[3].Opcode) {
 					case ADD:
@@ -505,7 +536,7 @@ int controller (CPU_p cpu, int isRunning) {
 					case LEA:
                         //printf("\n\n\n\nx%04X\n\n", cpu->buffers[3].SEXT);
 						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
-                        printf("\nin reg[%d] = 0x%04X\n", cpu->buffers[3].Rd, cpu->r[cpu->buffers[3].Rd]);
+                        //printf("\nin reg[%d] = 0x%04X\n", cpu->buffers[3].Rd, cpu->r[cpu->buffers[3].Rd]);
 						//getch();
 						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
 						//cc = cpu->r[Rd];
@@ -521,10 +552,11 @@ int controller (CPU_p cpu, int isRunning) {
 				break;
                 //state = FETCH;
 			case MEM:
-				printf("MEM   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
+				strcpy(temp, "MEM");
+				//printf("MEM   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				//may need to add in a check if the last buffer's PC is NOP (same as other states).
                 if (cpu->buffers[1].isStalled) {
-					printf("DBUFF is still stalled\n");
+					//printf("DBUFF is still stalled\n");
                     cpu->prefetch.head = PREFETCH_SIZE;
 					
 					cpu->buffers[0] = initBuffer();
@@ -563,7 +595,8 @@ int controller (CPU_p cpu, int isRunning) {
                 cpu->buffers[3] = cpu->buffers[2];
                 break;
 			case EXECUTE: // Note that ST does not have an execute microstate
-				printf("EXECUTE   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
+				strcpy(temp, "EXECUTE");
+				//printf("EXECUTE   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				if (cpu->buffers[1].PC == NOP) {
 					cpu->buffers[2] = cpu->buffers[1];
 				} else {
@@ -611,13 +644,13 @@ int controller (CPU_p cpu, int isRunning) {
 						case TRAP:
 							//cpu->buffers[2].PC = cpu->MDR;
 							cpu->r[7] = cpu->buffers[2].PC;
-							printf("It's a TRAP!\n");
+							//printf("It's a TRAP!\n");
 							value = trap(cpu, cpu->buffers[2].B);
 							//cpu->buffers[2].PC = cpu->r[7];
 							//start NOP stall
-							printf ("Our TRAP value is = %d\n", value);
+							//printf ("Our TRAP value is = %d\n", value);
 							if (value == 1) {
-								displayScreen(cpu, 0);
+								//displayScreen(cpu, 0);
 								return 0;
 							} else if (value > 1) {
 								cpu->r[0] = (char) value;
@@ -639,34 +672,34 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->prefetch.head = 8;
 							break;
 						case BR:
-							printf("made it to branch\n");
+							//printf("made it to branch\n");
 							if (cpu->N && (cpu->buffers[2].Rd & 4)) {
 								cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
-								printf("the new general PC = 0x%04X\n", cpu->PC);
+								//printf("the new general PC = 0x%04X\n", cpu->PC);
 	//                            cpu->buffers[0].isStalled = 1;
 								cpu->buffers[1].isStalled = 1;
 								cpu->prefetch.head = 8;
 								break;
 							}
-							printf("passed over N\n");
+							//printf("passed over N\n");
 							if (cpu->Z && (cpu->buffers[2].Rd & 2)) {
 								cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
-								printf("the new general PC = 0x%04X\n", cpu->PC);
+								//printf("the new general PC = 0x%04X\n", cpu->PC);
 	//                            cpu->buffers[0].isStalled = 1;
 								cpu->buffers[1].isStalled = 1;
 								cpu->prefetch.head = 8;
 								break;
 							}
-							printf("passed over Z\n");
+							//printf("passed over Z\n");
 							if (cpu->P && (cpu->buffers[2].Rd & 1)) {
 								cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
-								printf("the new general PC = 0x%04X\n", cpu->PC);
+								//printf("the new general PC = 0x%04X\n", cpu->PC);
 	//                            cpu->buffers[0].isStalled = 1;
 								cpu->buffers[1].isStalled = 1;
 								cpu->prefetch.head = 8;
 								break;
 							}
-							printf("passed over P\n");
+							//printf("passed over P\n");
 							break;
 						case NOP:
 							break;
@@ -680,7 +713,7 @@ int controller (CPU_p cpu, int isRunning) {
 				//cpu->buffers[2].A;
 				//cpu->buffers[2].B;
                 if(cpu->buffers[1].isStalled) {
-					printf("DBUFF is stalled\n");
+					//printf("DBUFF is stalled\n");
 //                    cpu->buffers[2].Opcode = NOP;
                     state = STORE;
                 } else {
@@ -688,7 +721,8 @@ int controller (CPU_p cpu, int isRunning) {
                 }
                 break;
 			case IDRR:
-				printf("IDRR   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
+				strcpy(temp, "IDRR");
+				//printf("IDRR   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				if (cpu->buffers[0].PC == NOP) {
 					cpu->buffers[1] = cpu->buffers[0];
 				} else {			
@@ -743,7 +777,7 @@ int controller (CPU_p cpu, int isRunning) {
 						case TRAP:
 							//printf("TRAP\n");
 							cpu->buffers[1].B = cpu->buffers[1].SEXT;
-							printf("Our B value is = 0x%04X\n", cpu->buffers[1].B);
+							//printf("Our B value is = 0x%04X\n", cpu->buffers[1].B);
 							//printf("TRAP\n");
 							//printf("%04X\n", cpu->buffers[1].B);
 							break;
@@ -811,7 +845,8 @@ int controller (CPU_p cpu, int isRunning) {
                 state = FETCH;
 				break;
             case FETCH: // microstates 18, 33, 35 in the book
-				printf("FETCH   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
+				strcpy(temp, "FETCH");
+				//printf("FETCH   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				predecodeValue = predecode(cpu);
 				if (predecodeValue != NOP) {
 					cpu->buffers[0].A = (cpu->PC - CONVERT_TO_DECIMAL);
@@ -838,9 +873,9 @@ int controller (CPU_p cpu, int isRunning) {
 				state = STORE;
                 break;
         }
-		printAllBuffers(cpu);
+		//printAllBuffers(cpu);
 		if (!isRunning) {
-			//display(cpu, 0);
+			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
 			scanf("%c", &charToPrint);
 		}
 		stepCounter++;
@@ -888,7 +923,7 @@ void cpuInit(CPU_p cpu) {
 	for (int i = 0; i < MAX_BUFFERS; i++) {
 		cpu->buffers[i] = initBuffer();
 	}
-	printAllBuffers(cpu);
+	//printAllBuffers(cpu);
 }
 
 //returns 1 if true 0 if false
@@ -945,9 +980,10 @@ int main(int argc, char* argv[]){
 	//setvbuf(stdout, NULL, _IONBF, 0);
 	isLoaded = 0;
 	memShift = 0;
+	char *temp;
 	CPU_p cpu = malloc(sizeof(CPU_s));
 	cpuInit(cpu);
-	displayScreen(cpu, memShift);
+	displayScreen(cpu, memShift, 0, 0, 0, 0, temp);
 	dialog(cpu);
 	return 0;
 }

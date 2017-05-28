@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h> 
 #include <termios.h> 
+#include <string.h>
 //#include <ncurses.h>
 
 // states
@@ -47,14 +48,14 @@
 #define PUTS 0x22
 
 // debug actions 
-#define EXIT 9
-#define RUN 7
-#define EDIT 6
+#define EXIT 8
+#define RUN 6
+#define EDIT 5
 #define DISP_MEM 4
 #define STEP 3
 #define SAVE 2
 #define LOAD 1
-#define SET_BRKPTS 8
+#define SET_BRKPTS 7
 
 // etc.
 #define SEXT6_SIGN_EXTEND 0xFFC0
@@ -133,6 +134,7 @@ typedef struct PREFETCH {
 	int head;
 	int nopCount;
 	Register PC;
+	int collisionFound;
 } PRE;
 
 typedef struct CPU_s{
