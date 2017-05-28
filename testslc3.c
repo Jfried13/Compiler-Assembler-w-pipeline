@@ -56,7 +56,7 @@ int trap(CPU_p cpu, int trap_vector) {
 	//printf("\n");
 	//printf("in here\n");
 	//printf("%04X\n", trap_vector);
-	//printf("Which TRAP?\n");
+	printf("Which TRAP?\n");
 	switch (trap_vector) {
 		case GETC:
 			//printf("A GETC!\n");
@@ -67,7 +67,7 @@ int trap(CPU_p cpu, int trap_vector) {
 			printf("%c", cpu->gotC);
 			break;
 		case PUTS:
-			//printf("A PUTS!\n");
+			printf("A PUTS!\n");
 			i = 0;
 			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			while ((temp)) {  
@@ -188,13 +188,13 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	}
 	
 	printf("FBUFF: PC: 0x%04X  IR: 0x%04X\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
-	printf("DBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  SR1: 0x%04X  SR2: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[1].PC, 
+	printf("DBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[1].PC, 
 			cpu->buffers[1].IR, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, 
 			cpu->buffers[1].B, cpu->buffers[1].SEXT, cpu->buffers[1].isStalled);
-	printf("EBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  SR1: 0x%04X  SR2: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[2].PC, 
+	printf("EBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[2].PC, 
 			cpu->buffers[2].IR, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, 
 			cpu->buffers[2].B, cpu->buffers[2].SEXT, cpu->buffers[2].isStalled);
-	printf("MBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  SR1: 0x%04X  SR2: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[3].PC, 
+	printf("MBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[3].PC, 
 			cpu->buffers[3].IR, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, 
 			cpu->buffers[3].B, cpu->buffers[3].SEXT, cpu->buffers[3].isStalled);	
 	
@@ -505,7 +505,10 @@ int controller (CPU_p cpu, int isRunning) {
 	}
     for (;;) {
 		//printf("here\n");
-		
+		if (!isRunning) {
+			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
+			scanf("%c", &charToPrint);
+		}
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
 				strcpy(temp, "STORE");
@@ -578,8 +581,7 @@ int controller (CPU_p cpu, int isRunning) {
 																- CONVERT_TO_DECIMAL];
 							break;
                         case LDR:
-							cpu->buffers[2].B = memory[(cpu->r[BaseR] + cpu->buffers[2].A) 
-																- CONVERT_TO_DECIMAL];
+							cpu->buffers[2].B = memory[cpu->buffers[2].A];
 							break;
                         case LDI:
 							cpu->buffers[2].A = memory[(cpu->buffers[2].PC + cpu->buffers[2].A)
@@ -596,6 +598,7 @@ int controller (CPU_p cpu, int isRunning) {
                 break;
 			case EXECUTE: // Note that ST does not have an execute microstate
 				strcpy(temp, "EXECUTE");
+				printf("in EXECUTE\n");
 				//printf("EXECUTE   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				if (cpu->buffers[1].PC == NOP) {
 					cpu->buffers[2] = cpu->buffers[1];
@@ -644,7 +647,7 @@ int controller (CPU_p cpu, int isRunning) {
 						case TRAP:
 							//cpu->buffers[2].PC = cpu->MDR;
 							cpu->r[7] = cpu->buffers[2].PC;
-							//printf("It's a TRAP!\n");
+							printf("It's a TRAP!\n");
 							value = trap(cpu, cpu->buffers[2].B);
 							//cpu->buffers[2].PC = cpu->r[7];
 							//start NOP stall
@@ -787,7 +790,7 @@ int controller (CPU_p cpu, int isRunning) {
 					}
 
 					switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
-						case LDR:
+						/*case LDR:
 						case LD:
 							//printf("LD/LDR\n");
 							//printf("%04X\n", cpu->MAR);
@@ -796,7 +799,7 @@ int controller (CPU_p cpu, int isRunning) {
 						case LDI:
 							//printf("LDI\n");
 							cpu->buffers[1].B = memory[cpu->buffers[1].A];
-							break;
+							break;*/
 						case ADD:
 							//printf("ADD\n");
 							if(HIGH_ORDER_BIT_VALUE6 & cpu->buffers[0].IR){ //0000|0000|0010|0000
@@ -874,10 +877,7 @@ int controller (CPU_p cpu, int isRunning) {
                 break;
         }
 		//printAllBuffers(cpu);
-		if (!isRunning) {
-			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
-			scanf("%c", &charToPrint);
-		}
+		
 		stepCounter++;
 		cpu->prefetch.nopCount--;
 
