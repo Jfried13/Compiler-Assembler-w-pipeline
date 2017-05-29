@@ -60,23 +60,15 @@ int trap(CPU_p cpu, int trap_vector) {
 	int i = 0;
 	char temp;
 	char charToPrint, carriageReturn;
-	//printf("\n");
-	//printf("in here\n");
-	//printf("%04X\n", trap_vector);
-	//printf("\n");
 	switch (trap_vector) {
 		case GETC:
-			//printf("A GETC!\n");
 			value = (int) getch();
 			break;
 		case OUT:
-			//printf("An OUT!\n");
-			//printf("%c", cpu->gotC);
-			//printf("%c", cpu->gotC);
-			putchar(cpu->gotC);
+			printf("%c", cpu->gotC);
+			//putchar(cpu->gotC);
 			break;
 		case PUTS:
-			//printf("A PUTS!\n");
 			i = 0;
 			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			while ((temp)) {  
@@ -86,12 +78,9 @@ int trap(CPU_p cpu, int trap_vector) {
 			}
 			break;
 		case HALT:
-			//printf("A HALT!\n");
-			//printf("halt\n");
 			value = 1;
 			break;
 	}
-	//printf("\n");
 	return value;
 }
 
@@ -100,7 +89,6 @@ int trap(CPU_p cpu, int trap_vector) {
 	This is a helper function to choose which CC values to set (N, Z, or, P)
 */
 void setCC(CPU_p cpu, Register Rd) {
-	//printf("0x%04X\n", Rd);
 	if (Rd == 0) {
 		cpu->N = 0;
 		cpu->Z = 1;
@@ -223,7 +211,6 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 */
 int dialog(CPU_p cpu) {
 	int opNum = 0, isRunning = 0;
-	//long newValue;
 	unsigned int placeInMemory;
 	unsigned short newValue; 
 	int dontDeleteThisGarbage = 0;
@@ -389,15 +376,13 @@ void printAllBuffers(CPU_p cpu) {
 
 int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCheck, int collisionPos) {
 	int nopCount = 0, Rd = 0, Rs1 = 0, Rs2 = -1;
-	//printf("the head POSITION!!!! = %d\n", headPos); 
 	int opcode = collisionCheck >> OPCODE_SHIFT;
 	if (opcode != ST && opcode != STR && opcode != STI) {
 		Rd = (headOfPrefetch & DR_MASK) >> DR_SHIFT; //Gets destination register
 		Rs1 = (collisionCheck & SR_MASK) >> SR_SHIFT; //Gets source register 1
 		
 		Rs2 = -1;
-			//printf("the head POSITION!!!!2 = %d\n", headPos); 
-
+		
 		if (!((collisionCheck & HIGH_ORDER_BIT_VALUE5) || (collisionCheck & HIGH_ORDER_BIT_VALUE6) 
 			|| (collisionCheck & HIGH_ORDER_BIT_VALUE8) || (collisionCheck & HIGH_ORDER_BIT_VALUE9))) {   //Checks if this value is a sext.
 			Rs2 = collisionCheck & SR2_MASK; //Gets the source register 2 if not a sext.
@@ -408,8 +393,6 @@ int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCh
 
 		
 		Rs2 = -1;
-			//printf("the head POSITION!!!!2 = %d\n", headPos); 
-
 		if (!((headOfPrefetch & HIGH_ORDER_BIT_VALUE5) || (headOfPrefetch & HIGH_ORDER_BIT_VALUE6) 
 			|| (headOfPrefetch & HIGH_ORDER_BIT_VALUE8) || (headOfPrefetch & HIGH_ORDER_BIT_VALUE9))) {   //Checks if this value is a sext.
 			Rs2 = headOfPrefetch & SR2_MASK; //Gets the source register 2 if not a sext.
@@ -445,31 +428,20 @@ Register predecode (CPU_p cpu) {
 	int collision = 0, i = cpu->PC, j = 0;
 	cpu->prefetch.collisionFound = 0;
 	if (cpu->prefetch.head >= 8) {
-			//printf("or here\n");
-
-		//printPrefetch(cpu);
 		for (; i < cpu->PC + 8; i++, j++) {
 			
 			cpu->prefetch.values[j] = memory[i - CONVERT_TO_DECIMAL];
 		}		
 		cpu->prefetch.head = 0;
-		//printPrefetch(cpu);
 		cpu->prefetch.nopCount = 79;
 		returnValue = NOP;
 	}	else if (cpu->prefetch.nopCount > 0) {
-		//printf("\n %d \n", cpu->prefetch.nopCount);
-			//printf("here\n");
-
 		returnValue = NOP;
 	} else {
-		//printf("or or here\n");
 		for (int i = cpu->prefetch.head + 1; i < cpu->prefetch.head + 4 && i < PREFETCH_SIZE; i++) {
-			//printf("head = %d\n", cpu->prefetch.head);
 			collision = 5 * checkForCollision(cpu->prefetch.values[cpu->prefetch.head], 
 						cpu->prefetch.head, cpu->prefetch.values[i], i);
-			//printf("\nThe collision is: %d\n", collision);
             if (collision) {
-				//printf("collision found\n");
 				cpu->prefetch.collisionFound = 1;
 				cpu->prefetch.nopCount = collision;
 				break;
@@ -521,11 +493,9 @@ int controller (CPU_p cpu, int isRunning) {
 		isRunning = 0;
 	}
     for (;;) {
-		//printf("here\n");
 		if (!isRunning) {
 			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
-			//scanf("%c", &charToPrint);
-			getch();
+			scanf("%c", &charToPrint);
 		}
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
@@ -533,9 +503,9 @@ int controller (CPU_p cpu, int isRunning) {
 				if (cpu->buffers[3].Opcode == LDI || cpu->buffers[3].Opcode == STI) {
 					cpu->buffers[2].isStalled = 1;
 					if (cpu->buffers[3].Opcode == STI) {
-						cpu->buffers[2].Opcode = ST;
+						cpu->buffers[3].Opcode = ST;
 					} else {
-						cpu->buffers[2].Opcode = LD;
+						cpu->buffers[3].Opcode = LD;
 					}
 					state = MEM;
 				} else {
@@ -572,35 +542,37 @@ int controller (CPU_p cpu, int isRunning) {
 						case NOP:
 							break;
 					}
-	//                cpu->buffers[3] = cpu->buffers[2];
 					state = MEM;
 				}
 				break;
-                //state = FETCH;
 			case MEM:
 				strcpy(temp, "MEM");
-				//printf("MEM   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				//may need to add in a check if the last buffer's PC is NOP (same as other states).
                 if (cpu->buffers[1].isStalled) {
-					//printf("DBUFF is still stalled\n");
                     cpu->prefetch.head = PREFETCH_SIZE;
 					
 					cpu->buffers[0] = initBuffer();
 					cpu->buffers[1] = initBuffer();
                 } else {
-					cpu->buffers[3] = cpu->buffers[2];
+					if (!cpu->buffers[2].isStalled) {
+						cpu->buffers[3] = cpu->buffers[2];
+					}
                     switch (cpu->buffers[3].Opcode) {
                         case ST:
-							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].B];
+							printf("in ST\n");
+							printBuffer(cpu, cpu->buffers[3]);
+							//printf("value in B: 0x%04X\n", cpu->buffers[2].B);
+							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].Rd];
+							printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
 							break;
                         case STR:
-							//printf("inside STR\n");
-							//printf("A: 0x%04X, B: 0x%04X, A - 0x%04X: 0x%04X\n", cpu->buffers[3].A, cpu->buffers[3].B, CONVERT_TO_DECIMAL, cpu->buffers[3].A - CONVERT_TO_DECIMAL);
-							//printf("memory[0x%04X] = 0x%04X\n", cpu->buffers[3].A - CONVERT_TO_DECIMAL, cpu->buffers[3].B);
 							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->buffers[3].B;
-							//printf("%c\n", (char) memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
 							break;
                         case STI:  //not sure of how to handle STI yet
+							printf("in STI\n");
+							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							//printf("value in A: 0x%04X\n");
+							printBuffer(cpu, cpu->buffers[3]);
 							break;
                         case LD:
 							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
@@ -609,36 +581,26 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
 							break;
                         case LDI:
-							cpu->buffers[3].A = memory[(cpu->buffers[3].PC + cpu->buffers[3].A)
-																- CONVERT_TO_DECIMAL];
+							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
 							//this will need to call LD afterwards
 							break;
                     }
-                    //Do Mem work with EBuff (buffers[2]) here first.
-                    //cpu->buffers[3].A = cpu->alu.A;
-                    //cpu->buffers[3].B = cpu->alu.B;
                 }
-                state = EXECUTE;
+				if (cpu->buffers[2].isStalled) {
+					state = STORE;
+					cpu->buffers[2].isStalled = 0;
+				} else {
+					state = EXECUTE;
+				}
                 break;
 			case EXECUTE: // Note that ST does not have an execute microstate
 				strcpy(temp, "EXECUTE");
-				//printf("in EXECUTE\n");
-				//printf("EXECUTE   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				if (cpu->buffers[1].PC == NOP) {
 					cpu->buffers[2] = cpu->buffers[1];
 				} else {
-					//printf("The buffer[1] B is = 0x%04X\n", cpu->buffers[1].B);
 					cpu->buffers[2] = cpu->buffers[1];
-					//printf("The buffer[2] B is = 0x%04X\n", cpu->buffers[2].B);
-
-					/*cpu->buffers[2].PC = cpu->buffers[1].PC;
-					cpu->buffers[2].Rd = cpu->buffers[1].Rd;
-					cpu->buffers[2].Opcode = cpu->buffers[1].Opcode;*/
 					switch (cpu->buffers[1].Opcode) {
 						case ADD:
-							//printf("A: 0x%04X\n", cpu->buffers[2].A);
-							//printf("B: 0x%04X\n", cpu->buffers[2].B);
-
 							if (cpu->buffers[2].A & HIGH_ORDER_BIT_VALUE15) {
 								cpu->buffers[2].A = (cpu->buffers[2].A) + (cpu->buffers[2].B);//same reason as below
 							} else if (cpu->buffers[1].B & HIGH_ORDER_BIT_VALUE15) {
@@ -656,13 +618,9 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->buffers[2].A = ~(cpu->buffers[2].A);
 							break;
 						case TRAP:
-							//cpu->buffers[2].PC = cpu->MDR;
 							cpu->r[7] = cpu->buffers[2].PC;
-							//printf("It's a TRAP!\n");
 							value = trap(cpu, cpu->buffers[2].B);
-							//cpu->buffers[2].PC = cpu->r[7];
 							//start NOP stall
-							//printf ("Our TRAP value is = %d\n", value);
 							if (value == 1) {
 								//displayScreen(cpu, 0);
 								return 0;
@@ -683,40 +641,29 @@ int controller (CPU_p cpu, int isRunning) {
 							//start NOP stall
 							break;
 						case JMP:
-							//cpu->r[7] = cpu->buffers[2].PC;
 							cpu->PC = cpu->r[cpu->buffers[2].A];
 							cpu->buffers[1].isStalled = 1;
 							cpu->prefetch.head = 8;
 							break;
 						case BR:
-							//printf("made it to branch\n");
 							if (cpu->N && (cpu->buffers[2].Rd & 4)) {
 								cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
-								//printf("the new general PC = 0x%04X\n", cpu->PC);
-	//                            cpu->buffers[0].isStalled = 1;
 								cpu->buffers[1].isStalled = 1;
 								cpu->prefetch.head = 8;
 								break;
 							}
-							//printf("passed over N\n");
 							if (cpu->Z && (cpu->buffers[2].Rd & 2)) {
 								cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
-								//printf("the new general PC = 0x%04X\n", cpu->PC);
-	//                            cpu->buffers[0].isStalled = 1;
 								cpu->buffers[1].isStalled = 1;
 								cpu->prefetch.head = 8;
 								break;
 							}
-							//printf("passed over Z\n");
 							if (cpu->P && (cpu->buffers[2].Rd & 1)) {
 								cpu->PC = cpu->buffers[2].PC + sext9(cpu->buffers[1].SEXT);
-								//printf("the new general PC = 0x%04X\n", cpu->PC);
-	//                            cpu->buffers[0].isStalled = 1;
 								cpu->buffers[1].isStalled = 1;
 								cpu->prefetch.head = 8;
 								break;
 							}
-							//printf("passed over P\n");
 							break;
 						case NOP:
 							break;
@@ -730,20 +677,16 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->buffers[2].A = cpu->buffers[2].PC + sext9(cpu->buffers[2].SEXT);
 							break;
 						case LDI:
-							cpu->buffers[2].A = (cpu->buffers[2].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[2].SEXT);
+							cpu->buffers[2].A = cpu->buffers[2].PC + sext9(cpu->buffers[2].SEXT);
 							break;
 						case ST:
-							//cpu->buffers[2].B = cpu->buffers[2].A;
 							cpu->buffers[2].A = cpu->buffers[2].PC + sext9(cpu->buffers[2].SEXT);
 							break;
 						case STR:
-							//cpu->buffers[2].B = cpu->buffers[2].A;
 							cpu->buffers[2].A = cpu->r[BaseR] + sext6(cpu->buffers[2].SEXT);
 							break;
 						case STI:
-							//printf("STI\n");
-							//cpu->buffers[2].B = cpu->buffers[2].A;
-							cpu->buffers[2].A = (cpu->buffers[2].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[2].SEXT);
+							cpu->buffers[2].A = cpu->buffers[2].PC + sext9(cpu->buffers[2].SEXT);
 							break;
 					}
 				}
@@ -755,7 +698,6 @@ int controller (CPU_p cpu, int isRunning) {
                 break;
 			case IDRR:
 				strcpy(temp, "IDRR");
-				//printf("IDRR   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				if (cpu->buffers[0].PC == NOP) {
 					cpu->buffers[1] = cpu->buffers[0];
 				} else {			
@@ -767,88 +709,22 @@ int controller (CPU_p cpu, int isRunning) {
 					cpu->buffers[1].A = cpu->buffers[0].IR & SR_MASK;
 					cpu->buffers[1].A = (short)cpu->buffers[1].A >> SR_SHIFT;
 					cpu->buffers[1].B = cpu->buffers[0].B & SR2_MASK;
-					//printf("SR2 = %d\n", cpu->buffers[1].B);
 					cpu->buffers[1].SEXT = cpu->buffers[0].IR & SR_MASK;
-					//immed_offset = cpu->buffers[0].IR & SR_MASK;
 					BaseR = (cpu->buffers[0].IR & BASE_MASK) >> SR_SHIFT;
-					//printf("here\n");
-					//IDRR Buffer
-	//				printBuffer(cpu->buffers[1]);
-					switch (cpu->buffers[1].Opcode) {							//Evaluate Address Stage
-						/*case LDR:
-							//printf("LDR\n");
-							//printf("%04X = (%04X + %04X) - %d\n", (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL, cpu->r[BaseR], sext6(cpu->buffers[1].SEXT), CONVERT_TO_DECIMAL);
-
-							cpu->buffers[1].A = (cpu->r[BaseR] + sext6(cpu->buffers[1].SEXT)) - CONVERT_TO_DECIMAL;
-							//printf("Yo dog");
-							break;
-						case LD:
-							//printf("LD\n");
-							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
-							break;
-						case LDI:
-							//printf("LDI\n");
-							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
-							break;
-						case LEA:
-							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
-							break;
-						case ST:
-							//printf("ST\n");
-							cpu->buffers[1].B = cpu->buffers[1].A;
-							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
-							break;
-						case STR:
-							//printf("STR\n");
-							cpu->buffers[1].B = cpu->buffers[1].A;
-							cpu->buffers[1].A = (cpu->r[BaseR] - CONVERT_TO_DECIMAL) + sext6(cpu->buffers[1].SEXT);
-							break;
-						case STI:
-							//printf("STI\n");
-							cpu->buffers[1].B = cpu->buffers[1].A;
-							cpu->buffers[1].A = (cpu->buffers[1].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[1].SEXT);
-							break;*/
-						case TRAP:
-							//printf("TRAP\n");
-							cpu->buffers[1].B = cpu->buffers[1].SEXT;
-							//printf("Our B value is = 0x%04X\n", cpu->buffers[1].B);
-							//printf("TRAP\n");
-							//printf("%04X\n", cpu->buffers[1].B);
-							break;
-						case NOP:
-							//printf("NOP\n");
-							break;
-					}
-
+					
 					switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
-						/*case LDR:
-						case LD:
-							//printf("LD/LDR\n");
-							//printf("%04X\n", cpu->MAR);
-							cpu->buffers[1].B = memory[cpu->buffers[1].A];
-							break;
-						case LDI:
-							//printf("LDI\n");
-							cpu->buffers[1].B = memory[cpu->buffers[1].A];
-							break;*/
 						case ADD:
-							//printf("ADD\n");
 							if(HIGH_ORDER_BIT_VALUE6 & cpu->buffers[1].IR){ //0000|0000|0010|0000
 								cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
 								cpu->buffers[1].B = sext5(cpu->buffers[1].SEXT);
-								//printf("%04X\n", cpu->buffers[1].B);
 							} else{
 								//change this
-								//printf("in here\n");
 								cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
-								//printf("SR2 = %d\n", cpu->buffers[1].B);
 								cpu->buffers[1].B = cpu->r[cpu->buffers[1].B];
-								//printf("Value = 0x%04X\n", cpu->buffers[1].B);
 							}
 
 							break;
 						case AND:
-							//printf("AND\n");
 							if(HIGH_ORDER_BIT_VALUE6 & cpu->buffers[1].IR){ //0000|0000|0010|0000
 								cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
 								cpu->buffers[1].B = (cpu->buffers[1].SEXT & SEXT5_MASK);
@@ -858,7 +734,6 @@ int controller (CPU_p cpu, int isRunning) {
 							}
 							break;
 						case NOT:
-							//printf("NOT\n");
 							cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
 							break;
 						case JSRR:
@@ -873,27 +748,22 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case STR:
 						case ST:
-							//printf("ST/STR\n");
 							cpu->buffers[1].B = cpu->r[cpu->buffers[1].Rd];
 							break;
 						case STI:
-							//printf("STI\n");
 							cpu->buffers[1].B = memory[cpu->buffers[1].A];
 							break;
+						case TRAP:
+							cpu->buffers[1].B = cpu->buffers[1].SEXT;
+							break;
 						case NOP:
-							//printf("NOP2\n");
 							break;
 					}
 				}
-				//cpu->buffers[2] = cpu->buffers[1];
-				//cpu->buffers[1] = cpu->buffers[0];
-				//cpu->buffers[1].A; //might need to take these out
-				//cpu->buffers[1].B;
                 state = FETCH;
 				break;
             case FETCH: // microstates 18, 33, 35 in the book
 				strcpy(temp, "FETCH");
-				//printf("FETCH   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
 				predecodeValue = predecode(cpu);
 				if (predecodeValue != NOP) {
 					cpu->buffers[0].A = (cpu->PC - CONVERT_TO_DECIMAL);
@@ -905,18 +775,12 @@ int controller (CPU_p cpu, int isRunning) {
 					cpu->buffers[0].IR = predecodeValue;
 				} else {
                     cpu->buffers[0].A = NOP;
-                   // cpu->PC++;	// increment PC
                     cpu->buffers[0].B = NOP;
                     cpu->ir = NOP;
                     cc = 0;
                     cpu->buffers[0].PC = NOP;  //IF Buffer
                     cpu->buffers[0].IR = NOP;
                 }
-               // state = IDRR;     
-					//break;
-                
-                //state = STORE;
-				//cpu->buffers[1] = cpu->buffers[0];
 				state = STORE;
                 break;
         }
@@ -967,7 +831,6 @@ void cpuInit(CPU_p cpu) {
 	for (int i = 0; i < MAX_BUFFERS; i++) {
 		cpu->buffers[i] = initBuffer();
 	}
-	//printAllBuffers(cpu);
 }
 
 //returns 1 if true 0 if false
