@@ -15,6 +15,11 @@
 a.hex
 *.o
 *.exe
+*.obj
+*.bin
+*.exe.stackdump
+*.lst
+*.asm
 *.stackdump
 *.out
 CMakeLists.txt
