@@ -54,10 +54,9 @@
 			ADD R0, R0, xA		; New Line char			
 			OUT
 			ADD R7, R7, #1
-			
-JSRR R7	
-	LOOP		
-			LDR R3, R1, #0		; Load contents of [index R1] into R3		
+			JSRR R7	
+		
+LOOP			LDR R3, R1, #0		; Load contents of [index R1] into R3		
 
 			ADD R3, R3, R2		; Change contents of R3 to R3 + key
 			
