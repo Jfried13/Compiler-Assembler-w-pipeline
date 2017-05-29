@@ -486,8 +486,9 @@ int controller (CPU_p cpu, int isRunning) {
 	char *temp = malloc(sizeof(char) * 8);
 	int value = 0, stepCounter = 1;
     state = STORE;
-	int j;
+	int j, memStallCount = 0, hasAccessedMem = 0; //Memory was accessed
 	Register predecodeValue = 0;
+	struct BUFFER memHolder;
 	
 	if(isRunning && encounteredBreakPont(cpu)) {
 		isRunning = 0;
@@ -547,49 +548,105 @@ int controller (CPU_p cpu, int isRunning) {
 			case MEM:
 				strcpy(temp, "MEM");
 				//may need to add in a check if the last buffer's PC is NOP (same as other states).
-                if (cpu->buffers[1].isStalled) {
-                    cpu->prefetch.head = PREFETCH_SIZE;
-					
-					cpu->buffers[0] = initBuffer();
-					cpu->buffers[1] = initBuffer();
-                } else {
-					if (!cpu->buffers[2].isStalled) {
-						cpu->buffers[3] = cpu->buffers[2];
+                if (!hasAccessedMem) {
+					if (cpu->buffers[1].isStalled) {
+						cpu->prefetch.head = PREFETCH_SIZE;
+						
+						cpu->buffers[0] = initBuffer();
+						cpu->buffers[1] = initBuffer();
+					} else {
+						if (!cpu->buffers[2].isStalled) {
+							cpu->buffers[3] = cpu->buffers[2];
+						}
+						switch (cpu->buffers[3].Opcode) {
+							case ST:
+								printf("in ST\n");
+								printBuffer(cpu, cpu->buffers[3]);
+								//printf("value in B: 0x%04X\n", cpu->buffers[2].B);
+								memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].Rd];
+								hasAccessedMem = 1;
+								cpu->prefetch.nopCount = 10;
+								memStallCount = 10;
+								memHolder = cpu->buffers[3];
+								cpu->buffers[3] = initBuffer();
+								cpu->buffers[2].isStalled = 1;
+
+								printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
+								break;
+							case STR:
+								memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->buffers[3].B;
+								hasAccessedMem = 1;
+								cpu->prefetch.nopCount = 10;
+								memStallCount = 10;
+								memHolder = cpu->buffers[3];
+								cpu->buffers[3] = initBuffer();
+								cpu->buffers[2].isStalled = 1;
+
+								break;
+							case STI:  //not sure of how to handle STI yet
+								printf("in STI\n");
+								cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+								hasAccessedMem = 1;
+								cpu->prefetch.nopCount = 10;
+								memStallCount = 10;
+								memHolder = cpu->buffers[3];
+								cpu->buffers[3] = initBuffer();
+								cpu->buffers[2].isStalled = 1;
+
+								//printf("value in A: 0x%04X\n");
+								printBuffer(cpu, cpu->buffers[3]);
+								break;
+							case LD:
+								cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+								hasAccessedMem = 1;
+								cpu->prefetch.nopCount = 10;
+								memStallCount = 10;
+								memHolder = cpu->buffers[3];
+								cpu->buffers[3] = initBuffer();
+								cpu->buffers[2].isStalled = 1;
+
+								break;
+							case LDR:
+								cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+								hasAccessedMem = 1;
+								cpu->prefetch.nopCount = 10;
+								memStallCount = 10;
+								memHolder = cpu->buffers[3];
+								cpu->buffers[3] = initBuffer();
+								cpu->buffers[2].isStalled = 1;
+								break;
+							case LDI:
+								cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+								hasAccessedMem = 1;
+								cpu->prefetch.nopCount = 10;
+								memStallCount = 10;
+								memHolder = cpu->buffers[3];
+								cpu->buffers[3] = initBuffer();
+								cpu->buffers[2].isStalled = 1;
+
+								//this will need to call LD afterwards
+								break;
+						}
 					}
-                    switch (cpu->buffers[3].Opcode) {
-                        case ST:
-							printf("in ST\n");
-							printBuffer(cpu, cpu->buffers[3]);
-							//printf("value in B: 0x%04X\n", cpu->buffers[2].B);
-							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].Rd];
-							printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
-							break;
-                        case STR:
-							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->buffers[3].B;
-							break;
-                        case STI:  //not sure of how to handle STI yet
-							printf("in STI\n");
-							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
-							//printf("value in A: 0x%04X\n");
-							printBuffer(cpu, cpu->buffers[3]);
-							break;
-                        case LD:
-							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
-							break;
-                        case LDR:
-							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
-							break;
-                        case LDI:
-							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
-							//this will need to call LD afterwards
-							break;
-                    }
-                }
-				if (cpu->buffers[2].isStalled) {
-					state = STORE;
-					cpu->buffers[2].isStalled = 0;
 				} else {
-					state = EXECUTE;
+					if (memStallCount > 0) {
+						state = MEM;
+						cpu->buffers[3] = initBuffer();
+						memStallCount--;
+					} else {
+						cpu->buffers[3] = memHolder;
+						hasAccessedMem = 0;
+						cpu->buffers[2].isStalled = 0;
+					}
+				}
+				
+				if (!hasAccessedMem) {
+					if (cpu->buffers[2].isStalled) {
+						state = STORE;
+						cpu->buffers[2].isStalled = 0;
+					} else {
+						state = EXECUTE;
+					}
 				}
                 break;
 			case EXECUTE: // Note that ST does not have an execute microstate
