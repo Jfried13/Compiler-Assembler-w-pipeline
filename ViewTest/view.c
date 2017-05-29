@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "../slc3.h"
+#include "slc3.h"
 //#include "slc3Pipe.c"
 
 // Created by Daniel Ivanov on 5/12/2017.
@@ -104,14 +104,14 @@ void DisplayPipelineWindow(CPU_p cpu) {
     currentWindow = 0;
     box(Pipeline, 0, 0);
     mvwprintw(Pipeline, 0, 15, "PipeLine Info:");
-//	mvwprintw(Pipeline, 3, 4, "FBUFF: PC:  IR: ");
-//	mvwprintw(Pipeline, 4, 11, "0x%X  0x%X", cpu->buffers[0].PC, cpu->buffers[0].IR);
-//	mvwprintw(Pipeline, 6, 4, "DBUFF: Op:  DR:  SR1:  SEXT/SR2:");
-//	mvwprintw(Pipeline, 7, 11, "0x%X  0x%X  0x%X   0x%X", cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B);
-//	mvwprintw(Pipeline, 9, 4, "EBUFF: Op:  DR:  RESULT:");
-//	mvwprintw(Pipeline, 10, 11, "0x%X  0x%X  0x%X", cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].B);
-//	mvwprintw(Pipeline, 12, 4, "MBUFF: Op:  DR:  RESULT:");
-//	mvwprintw(Pipeline, 13, 11, "0x%X  0x%X  0x%X", cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].B);
+	mvwprintw(Pipeline, 3, 4, "FBUFF: PC:  IR: ");
+	mvwprintw(Pipeline, 4, 11, "0x%X  0x%X", cpu->buffers[0].PC, cpu->buffers[0].IR);
+	mvwprintw(Pipeline, 6, 4, "DBUFF: Op:  DR:  SR1:  SEXT/SR2:");
+	mvwprintw(Pipeline, 7, 11, "0x%X  0x%X  0x%X   0x%X", cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B);
+	mvwprintw(Pipeline, 9, 4, "EBUFF: Op:  DR:  RESULT:");
+	mvwprintw(Pipeline, 10, 11, "0x%X  0x%X  0x%X", cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].B);
+	mvwprintw(Pipeline, 12, 4, "MBUFF: Op:  DR:  RESULT:");
+	mvwprintw(Pipeline, 13, 11, "0x%X  0x%X  0x%X", cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].B);
     wrefresh(Pipeline);
 }
 
@@ -126,14 +126,14 @@ void display(CPU_p cpu, int mem) {
     refresh();
 }
 void refreshWindows(){
-    wrefresh(MainWindow);
-    wrefresh(MainInput);
-    wrefresh(RegisterWindow);
-    wrefresh(IOWindow);
-    wrefresh(CPUWindow);
-    wrefresh(MemoryWindow);
-    wrefresh(Pipeline);
-    refresh();
+//    wrefresh(MainWindow);
+//    wrefresh(MainInput);
+//    wrefresh(RegisterWindow);
+//    wrefresh(IOWindow);
+//    wrefresh(CPUWindow);
+//    wrefresh(MemoryWindow);
+//    wrefresh(Pipeline);
+//    refresh();
 }
 
 void MainInputWindow(CPU_p cpu) {
@@ -206,7 +206,7 @@ void MainInputWindow(CPU_p cpu) {
 					} else {
 						mvwprintw(MainInput, 2, 35, "Invalid File");
 					}
-                    refreshWindows();
+//                    refreshWindows();
                 }
                 if (choices[highlight] == "Exit") {
                     clear();
@@ -259,20 +259,20 @@ void MainInputWindow(CPU_p cpu) {
                 if (choices[highlight] == "Dsply_Mem") {
                     mvwprintw(MainInput, 2, 1, "Cannot Display Memory without Loading Assembly Code First!");
 					//display(cpu, 0);
-                    refreshWindows();
+//                    refreshWindows();
 
                 }
 				
 				 if (choices[highlight] == "Set_Brkpts") {
                     mvwprintw(MainInput, 2, 1, "Reached stbrk");
-                     refreshWindows();
+//                     refreshWindows();
                 }
 				
                 if (choices[highlight] == "Run") {
                     mvwprintw(MainInput, 2, 1, "Cannot Run without Loading Assembly Code First!");
 					controller(cpu, 1);
 					//display(cpu, 0);
-                    refreshWindows();
+//                    refreshWindows();
 
                 }
                 break;
