@@ -72,7 +72,8 @@ int trap(CPU_p cpu, int trap_vector) {
 		case OUT:
 			//printf("An OUT!\n");
 			//printf("%c", cpu->gotC);
-			printf("%c", cpu->gotC);
+			//printf("%c", cpu->gotC);
+			putchar(cpu->gotC);
 			break;
 		case PUTS:
 			//printf("A PUTS!\n");
@@ -523,58 +524,57 @@ int controller (CPU_p cpu, int isRunning) {
 		//printf("here\n");
 		if (!isRunning) {
 			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
-			scanf("%c", &charToPrint);
+			//scanf("%c", &charToPrint);
+			getch();
 		}
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
 				strcpy(temp, "STORE");
-				//printf("STORE   %d, %d, General PC = 0x%04X\n", stepCounter, cpu->prefetch.nopCount, cpu->PC);
-                //printf("Opcode: %d\n", cpu->buffers[3].Opcode);
-                switch (cpu->buffers[3].Opcode) {
-					case ADD:
-						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
-						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
-						break;
-					case AND:
-						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
-						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
-						break;
-					case NOT:
-						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
-						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
-						break;
-					case LDI:
-					case LDR:
-					case LD:
-                        cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].B;
-						//may need to change the buffer being passed here
-						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
-						//cc = cpu->r[Rd];
-						//chooseFlag (cpu, cc);
-						break;
-					case LEA:
-                        //printf("\n\n\n\nx%04X\n\n", cpu->buffers[3].SEXT);
-						cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
-                        //printf("\nin reg[%d] = 0x%04X\n", cpu->buffers[3].Rd, cpu->r[cpu->buffers[3].Rd]);
-						//getch();
-						setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
-						//cc = cpu->r[Rd];
-						//chooseFlag (cpu, cc);
-						break;
-					case STR:
-					case ST:
-						//memory[cpu->buffers[3].A] = cpu->buffers[3].B;
-						break;
-					case TRAP:
-						if (cpu->buffers[3].SEXT == GETC) {
+				if (cpu->buffers[3].Opcode == LDI || cpu->buffers[3].Opcode == STI) {
+					cpu->buffers[2].isStalled = 1;
+					if (cpu->buffers[3].Opcode == STI) {
+						cpu->buffers[2].Opcode = ST;
+					} else {
+						cpu->buffers[2].Opcode = LD;
+					}
+					state = MEM;
+				} else {
+					switch (cpu->buffers[3].Opcode) {
+						case ADD:
 							cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
-						}
-						break;
-					case NOP:
-						break;
-	            }
-//                cpu->buffers[3] = cpu->buffers[2];
-				state = MEM;
+							setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
+							break;
+						case AND:
+							cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
+							setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
+							break;
+						case NOT:
+							cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
+							setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
+							break;
+						case LDI:
+						case LDR:
+						case LD:
+							cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].B;
+							//may need to change the buffer being passed here
+							setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
+							break;
+						case LEA:
+							cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
+							setCC(cpu, cpu->r[cpu->buffers[3].Rd]);
+							break;
+							break;
+						case TRAP:
+							if (cpu->buffers[3].SEXT == GETC) {
+								cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].A;
+							}
+							break;
+						case NOP:
+							break;
+					}
+	//                cpu->buffers[3] = cpu->buffers[2];
+					state = MEM;
+				}
 				break;
                 //state = FETCH;
 			case MEM:
