@@ -571,6 +571,12 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case NOP:
 							break;
+						case PP:
+							cpu->r[6] = cpu->buffers[3].A;
+							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
+								cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].B;
+							}
+							break;
 					}
 	//                cpu->buffers[3] = cpu->buffers[2];
 					state = MEM;
@@ -612,6 +618,13 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->buffers[3].A = memory[(cpu->buffers[3].PC + cpu->buffers[3].A)
 																- CONVERT_TO_DECIMAL];
 							//this will need to call LD afterwards
+							break;
+						case PP:
+							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
+								cpu->buffers[3].B = memory[cpu->buffers[3].A - 1];
+							} else {
+								memory[cpu->buffers[3].A] = cpu->buffers[3].Rd;
+							}
 							break;
                     }
                     //Do Mem work with EBuff (buffers[2]) here first.
@@ -744,6 +757,13 @@ int controller (CPU_p cpu, int isRunning) {
 							//printf("STI\n");
 							//cpu->buffers[2].B = cpu->buffers[2].A;
 							cpu->buffers[2].A = (cpu->buffers[2].PC - CONVERT_TO_DECIMAL) + sext9(cpu->buffers[2].SEXT);
+							break;
+						case PP:
+							if(cpu->buffers[2].IR & PUSH_POP_BIT_MASK) {
+								cpu->buffers[2].A++;
+							} else {
+								cpu->buffers[2].A--;
+							}
 							break;
 					}
 				}
@@ -882,6 +902,9 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case NOP:
 							//printf("NOP2\n");
+							break;
+						case PP:
+							cpu->buffers[1].A = cpu->r[6];
 							break;
 					}
 				}

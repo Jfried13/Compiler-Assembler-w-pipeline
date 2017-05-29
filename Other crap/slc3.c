@@ -1,4 +1,4 @@
-c0/*
+/*
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
@@ -150,11 +150,8 @@ int displayScreen(CPU_p cpu, int mem) {
 	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[14 + mem]);
 	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[15 + mem]);
 	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[16 + mem]);
-<<<<<<< HEAD
 	printf("  Select: 1)Load,2)Save, 3)Step, 5)Display Mem 6)Edit, 7)Run, 9)Exit\n");
-=======
-	printf("  Select: 1)Load, 2)Save, 3)Step, 5)Display Mem, 6)Edit, 7)Run, 9)Exit\n");
->>>>>>> master
+
 	return 0;
 }
 
