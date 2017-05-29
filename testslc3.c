@@ -495,7 +495,6 @@ int controller (CPU_p cpu, int isRunning) {
     for (;;) {
 		if (!isRunning) {
 			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
-			scanf("%c", &charToPrint);
 		}
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
@@ -785,7 +784,9 @@ int controller (CPU_p cpu, int isRunning) {
                 break;
         }
 		//printAllBuffers(cpu);
-		
+		if (!isRunning) {
+			scanf("%c", &charToPrint);
+		}
 		stepCounter++;
 		cpu->prefetch.nopCount--;
 
