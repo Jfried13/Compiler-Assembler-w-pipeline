@@ -1013,8 +1013,7 @@ void writeMemory(char * fileToWriteToName) {
 	This is the main function that starts the program off.
 */
 int main(int argc, char* argv[]){
-
-	//setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stdout, NULL, _IONBF, 0);
 	isLoaded = 0;
 	memShift = 0;
 	char *temp;
