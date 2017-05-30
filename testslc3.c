@@ -590,7 +590,7 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case PP:
 							cpu->r[6] = cpu->buffers[3].A;
-							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
+							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) { //Pop
 								cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].B;
 							}
 							break;
@@ -680,9 +680,9 @@ int controller (CPU_p cpu, int isRunning) {
 								//this will need to call LD afterwards
 								break;
 							case PP:
-								if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
+								if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) { //Pop
 									cpu->buffers[3].B = memory[cpu->buffers[3].A - 1];
-								} else {
+								} else { //Push
 									memory[cpu->buffers[3].A] = cpu->buffers[3].Rd;
 								}
 								break;
@@ -805,9 +805,9 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->buffers[2].A = cpu->buffers[2].PC + sext9(cpu->buffers[2].SEXT);
 							break;
 						case PP:
-							if(cpu->buffers[2].IR & PUSH_POP_BIT_MASK) {
+							if(cpu->buffers[2].IR & PUSH_POP_BIT_MASK) { //Pop
 								cpu->buffers[2].A++;
-							} else {
+							} else { //Push
 								cpu->buffers[2].A--;
 							}
 							break;
@@ -882,7 +882,10 @@ int controller (CPU_p cpu, int isRunning) {
 						case NOP:
 							break;
 						case PP:
-							cpu->buffers[1].A = cpu->r[6];
+							cpu->buffers[1].A = cpu->r[6]; //Save R6 in A
+							if(!(cpu->buffers[1].IR & PUSH_POP_BIT_MASK)) { //push
+								cpu->buffers[1].Rd = cpu->r[cpu->buffers[1].Rd]; //Get what Sr is actually holding.
+							}
 							break;
 					}
 				}
