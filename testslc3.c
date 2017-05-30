@@ -152,7 +152,7 @@ char getch() {
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount, int collisionFound, char *stage) {
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 100; i++) {
 		printf("\n");
 	}
 	

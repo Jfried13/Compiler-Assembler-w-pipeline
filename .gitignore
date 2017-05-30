@@ -12,7 +12,6 @@
 *.ser
 *.iml
 *.xml
-a.hex
 *.o
 *.exe
 *.obj
