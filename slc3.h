@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h> 
 #include <termios.h> 
-#include <ncurses.h>
+//#include <ncurses.h>
 
 
 #define FETCH 0
@@ -35,12 +35,10 @@
 
 #define EXIT 9
 #define RUN 7
-#define EDIT 6
 #define DISP_MEM 5
 #define STEP 3
-#define SAVE 2
 #define LOAD 1
-#define SET_BRKPTS 8
+
 // etc.
 #define SEXT6_SIGN_EXTEND 0xFFC0
 #define SEXT6_MASK 0x003F
@@ -67,21 +65,16 @@
 #define TRAP_VECTOR_MASK 0x00FF
 
 #define MAX_FILE_NAME 100
-#define MAX_BREAKPOINTS 4
-#define AVAILABLE_BRKPT 9999
+
 #define SEXT9_SIGN_EXTEND 0xFE00
 #define HIGH_ORDER_BIT_VALUE9 0x0100
 
 #define SEXT5_MASK 0x001F
-#define ENTER_KEY 10
 
 #define MAX_MEMORY 500
 
-unsigned short memory[MAX_MEMORY];
 
 typedef unsigned short Register;
-
-
 //cpu a b res mar mdr
 // lc3.c
 typedef struct CPU_s{
@@ -89,11 +82,8 @@ typedef struct CPU_s{
 	Register A, B, Res;
 	Register PC, ir;
 	Register MAR, MDR;
-	unsigned int N;
-	unsigned int P;
-	unsigned int Z;
+	Register N, Z, P;
+	Register ImmFlag;
+	Register IMM5;
 	char gotC;
-	unsigned short breakPoints[MAX_BREAKPOINTS];
 } CPU_s, *CPU_p;
-
-int controller(CPU_p, int);
