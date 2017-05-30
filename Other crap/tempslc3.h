@@ -139,6 +139,7 @@ typedef struct PREFETCH {
 	Register values[PREFETCH_SIZE];
 	int head;
 	int nopCount;
+	int stepCounter;
 	Register PC;
 	int collisionFound;
 	int isEmpty;

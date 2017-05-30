@@ -239,22 +239,11 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	} else {
 		printf("\n");
 	}
-	
-	/*printf("FBUFF: PC: 0x%04X  IR: 0x%04X\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
-	printf("DBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %02d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[1].PC, 
-			cpu->buffers[1].IR, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, 
-			cpu->buffers[1].B, cpu->buffers[1].SEXT, cpu->buffers[1].isStalled);
-	printf("EBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %02d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[2].PC, 
-			cpu->buffers[2].IR, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, 
-			cpu->buffers[2].B, cpu->buffers[2].SEXT, cpu->buffers[2].isStalled);
-	printf("MBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %02d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[3].PC, 
-			cpu->buffers[3].IR, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, 
-			cpu->buffers[3].B, cpu->buffers[3].SEXT, cpu->buffers[3].isStalled);	
-	*/
+
 	if (!isRunning) {
 		printf("\n1) Load,  2) Save,  3) Step,  4) Display Memory,  5) Edit,  6) Run,  7) (Un)Set Breakpts,  8) Exit\n");
 	} else {
-		printf("\nPress any key to step ");
+		printf("\nPress enter to step or 'q' to quit ");
 	}
 	return 0;
 }
@@ -282,7 +271,9 @@ int dialog(CPU_p cpu) {
 					inputFile = fopen(fileName, "r");
 					if (inputFile == NULL) {
 						printf("DIDN'T OPEN");
-						displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+
+						//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 						break;
 					}
 					int i = 0;
@@ -291,23 +282,30 @@ int dialog(CPU_p cpu) {
 						i++;
 					}
 					isLoaded = 1;
-					displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
+					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+
+					//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					fclose(inputFile);
 					break;
 				case SAVE:
 					printf("Enter a file name to save to: ");
 					scanf("%s", &fileName);
 					writeMemory(fileName);
-					displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
+					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+					//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					break;
 				case STEP:
 					if (isLoaded == 1) {
 						controller(cpu, 0);
-						displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+
+						//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 						opNum = 0;
 					} else {
 						printf("No file loaded!");
-						displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+
+						//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					}
 					break;
 				case DISP_MEM:
@@ -316,10 +314,14 @@ int dialog(CPU_p cpu) {
 					if(memShift - START_MEM > MAX_MEMORY - DISP_BOUNDARY) {
 						printf("Error: out of memory");
 						memShift = 0;
-						displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+
+						//displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
 						break;
 					} else {
-						displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+
+						//displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
 					}
 					break;
 				case EDIT:
@@ -331,11 +333,15 @@ int dialog(CPU_p cpu) {
 					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
 					memory[placeInMemory - START_MEM + 1] = newValue;
-					displayScreen(cpu, placeInMemory - START_MEM - 7, 0, 0, 0, 0, charPtr);
+					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+
+					//displayScreen(cpu, placeInMemory - START_MEM - 7, 0, 0, 0, 0, charPtr);
 					break;
 				case RUN:
 					controller(cpu, 1);
-					displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
+					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+
+					//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					break;
 				case EXIT:
 					printf("Simulation Terminated.");
@@ -551,7 +557,7 @@ int controller (CPU_p cpu, int isRunning) {
 	unsigned int opcode, Rd, Rs1, Rs2, immed_offset, BaseR;	// fields for the IR
 	char charToPrint = ' ';
 	char *temp = malloc(sizeof(char) * 8);
-	int value = 0, stepCounter = 1;
+	int value = 0;
     state = STORE;
 	int j;
 	struct BUFFER tempHolder;
@@ -562,7 +568,7 @@ int controller (CPU_p cpu, int isRunning) {
 	}
     for (;;) {
 		if (!isRunning) {
-			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
+			displayScreen(cpu, 0, 1, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
 		}
         switch (state) {
 			case STORE: // Look at ST. Microstate 16 is the store to memory
@@ -701,8 +707,11 @@ int controller (CPU_p cpu, int isRunning) {
 				
 				for (; cpu->memStepCount > 0; cpu->memStepCount--) {
 					cpu->buffers[3] = initBuffer();
-					displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
+					displayScreen(cpu, 0, 1, cpu->prefetch.stepCounter++, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
 					scanf("%c", &charToPrint);
+					if (charToPrint == 'q') {
+						return 0;
+					}
 				}
 				
 				if (cpu->memStepCount <= 0 && cpu->hasAccessedMem) {
@@ -926,8 +935,13 @@ int controller (CPU_p cpu, int isRunning) {
 		//printAllBuffers(cpu);
 		if (!isRunning) {
 			scanf("%c", &charToPrint);
+			if (charToPrint == 'q') {
+				//cpu->prefetch.stepCounter++;
+				//cpu->prefetch.nopCount--;
+				return 0;
+			}
 		}
-		stepCounter++;
+		cpu->prefetch.stepCounter++;
 		cpu->prefetch.nopCount--;
 
     }
@@ -964,6 +978,7 @@ void cpuInit(CPU_p cpu) {
 	cpu->breakPoints[3] = AVAILABLE_BRKPT;
 	cpu->prefetch.head = 8;
 	cpu->prefetch.nopCount = 0;
+	cpu->prefetch.stepCounter = 1;
 	for (int i = 0; i < PREFETCH_SIZE; i++) {
 		cpu->prefetch.values[i] = NOP;
 	}
