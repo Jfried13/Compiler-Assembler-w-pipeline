@@ -283,23 +283,18 @@ int dialog(CPU_p cpu) {
 					}
 					isLoaded = 1;
 					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-
-					//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					fclose(inputFile);
 					break;
 				case SAVE:
 					printf("Enter a file name to save to: ");
 					scanf("%s", &fileName);
 					writeMemory(fileName);
-					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-					//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
-					break;
+					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);					break;
 				case STEP:
 					if (isLoaded == 1) {
 						controller(cpu, 0);
 						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
 
-						//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 						opNum = 0;
 					} else {
 						printf("No file loaded!");
@@ -314,25 +309,25 @@ int dialog(CPU_p cpu) {
 					if(memShift - START_MEM > MAX_MEMORY - DISP_BOUNDARY) {
 						printf("Error: out of memory");
 						memShift = 0;
-						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+						displayScreen(cpu, memShift - START_MEM, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
 
 						//displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
 						break;
 					} else {
-						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
+						displayScreen(cpu,memShift - START_MEM, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
 
 						//displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
 					}
 					break;
 				case EDIT:
 					printf("What memory address would you like to edit: ");
-					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory - START_MEM + 1, memory[placeInMemory - START_MEM + 1]);
-					printf("What would you like the new value in location %04x to be: ", placeInMemory);
+					scanf("%04X", &placeInMemory);
+					printf("The contents of location 0x%04X is  0x%04X\n", placeInMemory, memory[placeInMemory - START_MEM]);
+					printf("What would you like the new value in location 0x%04X to be: ", placeInMemory);
 					scanf("%s", &newMemoryValue);
 					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
-					memory[placeInMemory - START_MEM + 1] = newValue;
+					memory[placeInMemory - START_MEM] = newValue;
 					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
 
 					//displayScreen(cpu, placeInMemory - START_MEM - 7, 0, 0, 0, 0, charPtr);
@@ -707,10 +702,12 @@ int controller (CPU_p cpu, int isRunning) {
 				
 				for (; cpu->memStepCount > 0; cpu->memStepCount--) {
 					cpu->buffers[3] = initBuffer();
-					displayScreen(cpu, 0, 1, cpu->prefetch.stepCounter++, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
-					scanf("%c", &charToPrint);
-					if (charToPrint == 'q') {
-						return 0;
+					if (!isRunning) {
+						displayScreen(cpu, 0, 1, cpu->prefetch.stepCounter++, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
+						scanf("%c", &charToPrint);
+						if (charToPrint == 'q') {
+							return 0;
+						}
 					}
 				}
 				
