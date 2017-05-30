@@ -157,29 +157,31 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	}
 	
 	if (!isRunning) {
-		printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
+		printf("\t\tWelcome to the LC-3 Pipeline Simulator\n\n");
 	}
-	printf("\t\tRegisters \t\t    Memory\n");
+	
 	int i = START_MEM + mem;
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
-
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[2 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[7 + mem]);
-
+	printf("Registers          ______________\t\t\t\t    Memory\n");
+	printf("R%d: x%04X         |              |\t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
+	printf("R%d: x%04X    FBUFF|  PC:    IR:  |\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
+	printf("R%d: x%04X         | x%04X  x%04X |\t\t\t\t x%X: x%04X\n", 2, cpu->r[2], cpu->buffers[0].PC, cpu->buffers[0].IR, i+2, memory[2 + mem]);
+	printf("R%d: x%04X         |______________|\t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
+	printf("R%d: x%04X          _______________________________________\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
+	printf("R%d: x%04X         |                                       |\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
+	printf("R%d: x%04X    DBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
+	printf("R%d: x%04X         | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%X: x%04X\n", 7, cpu->r[7], cpu->buffers[1].PC, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B, i+7, memory[7 + mem]);
 	i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
-	printf("\t\t\t\t\t x%04X: x%04X\n", i, memory[8 + mem]);
-	printf("\t\t\t\t\t x%04X: x%04X\n", i+1, memory[9 + mem]);
-	printf("\t\t\t\t\t x%04X: x%04X\n", i+2, memory[10 + mem]);
-	printf("\t\tPC:x%04X    IR:x%04X     x%04X: x%04X\n",cpu->PC,cpu->ir, i+3, memory[11 + mem]);
-	printf("\t\tA: x%04X    B: x%04X     x%04X: x%04X\n",cpu->A,cpu->B, i+4, memory[12 + mem]);
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%04X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR, i+5, memory[13 + mem]);
-	printf("\t\tCC: N: %d  Z: %01d P: %d      x%04X: x%04X\n",cpu->N,cpu->Z,cpu->P, i+6, memory[14 + mem]);
-	printf("\t\t\t\t\t x%04X: x%04X\n", i+7, memory[15 + mem]);
+	printf("                  |_______________________________________|\t x%04X: x%04X\n", i, memory[8 + mem]);
+	printf("                   _______________________________________\t x%04X: x%04X\n", i+1, memory[9 + mem]);
+	printf("                  |                                       |\t x%04X: x%04X\n", i+2, memory[10 + mem]);
+	printf("             EBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\t x%04X: x%04X\n", i+3, memory[11 + mem]);
+	printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%04X: x%04X\n", cpu->buffers[2].PC, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, cpu->buffers[2].B, i+4, memory[12 + mem]);
+	printf("                  |_______________________________________|\t x%04X: x%04X\n", i+5, memory[13 + mem]);
+	printf("                   _______________________________________\t x%04X: x%04X\n", i+6, memory[14 + mem]);
+	printf("                  |                                       |\t x%04X: x%04X\n", i+7, memory[15 + mem]);
+	printf("             MBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\n");
+	printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\n", cpu->buffers[3].PC, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, cpu->buffers[3].B);
+	printf("                  |_______________________________________|\n\n");
 	printf("\t\tStep: %d  NOP Count: %d\n\n", stepCount, nopCount);
 	if (collisionFound) {
 		printf("Collision Detected!\n");
@@ -661,7 +663,7 @@ int controller (CPU_p cpu, int isRunning) {
 							//start NOP stall
 							if (value == 1) {
 								//displayScreen(cpu, 0);
-								printf("\n\n\n    Program finished. Press any key to continue ");
+								printf("\n\n\n    Program finished. Press any key to end ");
 								getch();
 								return 0;
 							} else if (value > 1) {
