@@ -240,7 +240,7 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 */
 int dialog(CPU_p cpu) {
 	int opNum = 0, isRunning = 0;
-	unsigned int placeInMemory;
+	unsigned short placeInMemory;
 	unsigned short newValue; 
 	char newMemoryValue[4];
 	char * charPtr;
@@ -303,13 +303,12 @@ int dialog(CPU_p cpu) {
 				case EDIT:
 					printf("What memory address would you like to edit: ");
 					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory - startMem + 1, memory[placeInMemory - startMem + 1]);
+					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - startMem]);
 					printf("What would you like the new value in location %04x to be: ", placeInMemory);
 					scanf("%s", &newMemoryValue);
-					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
-					memory[placeInMemory - startMem + 1] = newValue;
-					displayScreen(cpu, placeInMemory - startMem - 7, 0, 0, 0, 0, charPtr);
+					memory[placeInMemory - startMem] = newValue;
+					displayScreen(cpu, placeInMemory - startMem, 0, 0, 0, 0, charPtr);
 					break;
 				case RUN:
 					controller(cpu, 1);
@@ -981,27 +980,25 @@ void writeMemory(char * fileToWriteToName) {
 	FILE * filePtr;
 	int TRAP25 = 61477;
 	unsigned int memoryStart, memoryEnd; 
+	int writeOK = 1;
+	
 	//the file exists so promt the user to see if they 
 	//are ok with overwritting the preexisting file right here
 	//include if/else statement to check user decision for overwriting
 	if(checkIfFileExists(fileToWriteToName)) {
-
-		filePtr = fopen(fileToWriteToName, "w");
-		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - startMem]);
-			fprintf(filePtr, "%04x\n", memory[i - startMem]);
-		}
-		fclose(filePtr);
-
+		int choice;
+		printf("This file already exists! 1) to overwrite, 2) to cancel: ");
+		scanf("%d", &choice);
+		if(choice != 1) writeOK = 0;
 	//the file doesn't exist so create the new file and write to it
-	} else {
+	} 
+	
+	if (writeOK) {
 		FILE * filePtr;
 		filePtr = fopen(fileToWriteToName, "w");
 		printf("Enter the beginning and end of the memory to save: ");
 		scanf("%4x %4x", &memoryStart, &memoryEnd);
-		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
 		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - startMem]);
 			fprintf(filePtr, "%04x\n", memory[i - startMem]);
 		}
 		fclose(filePtr);
