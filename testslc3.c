@@ -62,6 +62,11 @@ int trap(CPU_p cpu, int trap_vector) {
 	char charToPrint, carriageReturn;
 	switch (trap_vector) {
 		case GETC:
+			if (!cpu->reachedInput) {
+				printf("Input:  ");
+				cpu->reachedInput = 1;
+			}
+			
 			value = (int) getch();
 			break;
 		case OUT:
@@ -69,13 +74,16 @@ int trap(CPU_p cpu, int trap_vector) {
 			//putchar(cpu->gotC);
 			break;
 		case PUTS:
+			cpu->reachedInput = 0;
 			i = 0;
 			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+			printf("\n\nOutput:  ");
 			while ((temp)) {  
 			  printf("%c", (temp));
 			  i++;
 			  temp = memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			}
+			//printf("\n");
 			break;
 		case HALT:
 			value = 1;
@@ -144,7 +152,7 @@ char getch() {
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount, int collisionFound, char *stage) {
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 100; i++) {
 		printf("\n");
 	}
 	
@@ -163,15 +171,15 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
 	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[7 + mem]);
 
-	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[8 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[9 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[10 + mem]);
-	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[11 + mem]);
-	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[12 + mem]);
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[13 + mem]);
-	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[14 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[15 + mem]);
+	i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
+	printf("\t\t\t\t\t x%04X: x%04X\n", i, memory[8 + mem]);
+	printf("\t\t\t\t\t x%04X: x%04X\n", i+1, memory[9 + mem]);
+	printf("\t\t\t\t\t x%04X: x%04X\n", i+2, memory[10 + mem]);
+	printf("\t\tPC:x%04X    IR:x%04X     x%04X: x%04X\n",cpu->PC,cpu->ir, i+3, memory[11 + mem]);
+	printf("\t\tA: x%04X    B: x%04X     x%04X: x%04X\n",cpu->A,cpu->B, i+4, memory[12 + mem]);
+	printf("\t\tMAR:x%04X  MDR:x%04X     x%04X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR, i+5, memory[13 + mem]);
+	printf("\t\tCC: N: %d  Z: %01d P: %d      x%04X: x%04X\n",cpu->N,cpu->Z,cpu->P, i+6, memory[14 + mem]);
+	printf("\t\t\t\t\t x%04X: x%04X\n", i+7, memory[15 + mem]);
 	printf("\t\tStep: %d  NOP Count: %d\n\n", stepCount, nopCount);
 	if (collisionFound) {
 		printf("Collision Detected!\n");
@@ -186,13 +194,13 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	}
 	
 	printf("FBUFF: PC: 0x%04X  IR: 0x%04X\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
-	printf("DBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[1].PC, 
+	printf("DBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %02d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[1].PC, 
 			cpu->buffers[1].IR, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, 
 			cpu->buffers[1].B, cpu->buffers[1].SEXT, cpu->buffers[1].isStalled);
-	printf("EBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[2].PC, 
+	printf("EBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %02d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[2].PC, 
 			cpu->buffers[2].IR, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, 
 			cpu->buffers[2].B, cpu->buffers[2].SEXT, cpu->buffers[2].isStalled);
-	printf("MBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[3].PC, 
+	printf("MBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %02d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[3].PC, 
 			cpu->buffers[3].IR, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, 
 			cpu->buffers[3].B, cpu->buffers[3].SEXT, cpu->buffers[3].isStalled);	
 	
@@ -653,6 +661,8 @@ int controller (CPU_p cpu, int isRunning) {
 							//start NOP stall
 							if (value == 1) {
 								//displayScreen(cpu, 0);
+								printf("\n\n\n    Program finished. Press any key to continue ");
+								getch();
 								return 0;
 							} else if (value > 1) {
 								cpu->buffers[2].A = (char) value;
@@ -855,6 +865,7 @@ void cpuInit(CPU_p cpu) {
 	cpu->MDR = 0x0000;
 	cpu->A = 0x0000;
 	cpu->B = 0x0000;
+	cpu->reachedInput = 0;
 	cpu->N = 0;
 	cpu->Z = 0;
 	cpu->P = 0;
@@ -937,7 +948,7 @@ void writeMemory(char * fileToWriteToName) {
 */
 int main(int argc, char* argv[]){
 
-	//setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stdout, NULL, _IONBF, 0);
 	isLoaded = 0;
 	memShift = 0;
 	char *temp;

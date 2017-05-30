@@ -147,6 +147,7 @@ typedef struct CPU_s{
 	Register A, B, Res;
 	Register PC, ir;
 	Register MAR, MDR;
+	int reachedInput;
 	ALU_s alu;
 	unsigned int N;
 	unsigned int P;
