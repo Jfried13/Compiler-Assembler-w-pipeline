@@ -83,7 +83,7 @@ LOOP			LDR R3, R1, #0		; Load contents of [index R1] into R3
 		HALT
 KEY		.FILL #-3
 NEGENTER	.FILL xFFF6	
-PROMPT		.STRINGZ "Please enter your name:\n"
+PROMPT		.STRINGZ "Please enter your name: "
 PRESSKEY	.STRINGZ "Press any key to continue\n"
 NAME		.BLKW #20 
 		.END
