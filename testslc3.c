@@ -12,7 +12,9 @@ int dialog (CPU_p cpu);
 
 char getch ();
 
-void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
+void editBreakPoint(CPU_p cpu);
+
+int encounteredBreakPoint(CPU_p cpu, unsigned short pc);
 
 void writeMemory(char * fileToWriteToName);
 
@@ -105,14 +107,6 @@ void setCC(CPU_p cpu, Register Rd) {
 }
 	
 
-/*
-	This function sets the appropriate flags.
-*/
-void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos) {
-	cpu->N = neg;
-	cpu->Z = zero;
-	cpu->P = pos;
-}
 
 
 /*
@@ -152,26 +146,61 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 		printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
 	}
 	printf("\t\tRegisters \t\t    Memory\n");
-	int i = START_MEM + mem;
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
-
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[2 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
-	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[7 + mem]);
-
-	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[8 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[9 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[10 + mem]);
-	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[11 + mem]);
-	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[12 + mem]);
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[13 + mem]);
-	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[14 + mem]);
-	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[15 + mem]);
+	int j = START_MEM + mem;
+	int i = 0;
+	for(i = 0; i <= 7; i++) {
+		printf("\t\tR%d: x%04X \t\t x%X: x%04X", i, cpu->r[i], j + i, memory[i + mem]);
+		if(encounteredBreakPoint(cpu, j + i)) {
+			printf("*\n");
+		} else {
+			printf("\n");
+		}
+	}
+	
+	
+	j = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
+	int k = 0;
+	for(i = 8 ; i <= 10 ; i++) {
+		printf("\t\t\t\t\t x%X: x%04X",j + k, memory[i + mem]);
+		if(encounteredBreakPoint(cpu, j + k)) {
+			printf("*\n");
+		} else {
+			printf("\n");
+		}
+		k++;
+	}
+	
+	
+	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X",cpu->PC,cpu->ir,j+3, memory[11 + mem]);
+	if(encounteredBreakPoint(cpu, j + 3)) {
+			printf("*\n");
+		} else {
+			printf("\n");
+		}
+	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X",cpu->A,cpu->B,j+4, memory[12 + mem]);
+	if(encounteredBreakPoint(cpu, j + 4)) {
+			printf("*\n");
+		} else {
+			printf("\n");
+		}
+	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,j+5, memory[13 + mem]);
+	if(encounteredBreakPoint(cpu, j + 5)) {
+			printf("*\n");
+		} else {
+			printf("\n");
+		}
+	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X",cpu->N,cpu->Z,cpu->P,j+6, memory[14 + mem]);
+	if(encounteredBreakPoint(cpu, j + 6)) {
+			printf("*\n");
+		} else {
+			printf("\n");
+		}
+	printf("\t\t\t\t\t x%X: x%04X",j+7, memory[15 + mem]);
+	if(encounteredBreakPoint(cpu, j + 7)) {
+			printf("*\n");
+		} else {
+			printf("\n");
+		}
 	printf("\t\tStep: %d  NOP Count: %d\n\n", stepCount, nopCount);
 	if (collisionFound) {
 		printf("Collision Detected!\n");
@@ -255,6 +284,10 @@ int dialog(CPU_p cpu) {
 						displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					}
 					break;
+				case SET_BRKPTS :
+					editBreakPoint(cpu);
+					displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
+					break;
 				case DISP_MEM:
 					printf("Position to move to? (in hex): ");
 					scanf("%4x", &memShift);
@@ -292,24 +325,32 @@ int dialog(CPU_p cpu) {
 /*
 	This method compares the current value of PC against any breakpoints entered by the user. 
 */
-int encounteredBreakPont(CPU_p cpu) {
+int encounteredBreakPoint(CPU_p cpu, Register pc) {
+		
 		int encountered = 0;
 		int i;
 		for (i = 0; i < MAX_BREAKPOINTS; i++) {
-			if(cpu->PC == cpu->breakPoints[i]) {
+			if(pc == cpu->breakPoints[i]) {
 				encountered = 1;
 				i = MAX_BREAKPOINTS;
 			}
+	
 		}
+		
 		return encountered; 
 }
 
 /*
-	This function takes a passed breakPoint and searches the existing collection of breakpoints.
+	This function takes a prompts the User for a breakPoint and searches the existing collection of breakpoints.
 	If a match is found the breakPoint is removed from the collection. If a match isn't found the
 	breakPoint is added. 
 */
-void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
+void editBreakPoint(CPU_p cpu) {
+	unsigned int breakPoint;
+	printf("Enter Memory Location of Desired Breakpoint: ");
+	scanf("%04x", &breakPoint);
+	//This needs to be changed to some variable initial pc.
+	//breakPoint = breakPoint - START_MEM;
 	int i;
 	int found = 0;
 	for(i = 0; i < MAX_BREAKPOINTS; i++) {
@@ -325,13 +366,17 @@ void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
 	//If this address doesn't exist find first available spot and add it to the collection of breakpoints
 	if(!found) {
 		for(i = 0; i < MAX_BREAKPOINTS; i++) {
-		//found the first open spot
-		if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
-			//Add in new break point and exit the loop;
-			cpu->breakPoints[i] = breakPoint;
-			i = MAX_BREAKPOINTS;
-		}		
+			//found the first open spot
+			if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
+				//Add in new break point and exit the loop;
+				cpu->breakPoints[i] = breakPoint;
+				i = MAX_BREAKPOINTS;
+			}		
+		}
 	}
+	printf("breakPoints:");
+	for(i = 0; i < 4; i++) {
+		printf("0x%04X ", cpu->breakPoints[i]);
 	}
 }
 
@@ -489,10 +534,13 @@ int controller (CPU_p cpu, int isRunning) {
 	int j;
 	Register predecodeValue = 0;
 	
-	if(isRunning && encounteredBreakPont(cpu)) {
-		isRunning = 0;
-	}
+	
+	
     for (;;) {
+		if(isRunning && encounteredBreakPoint(cpu, cpu->PC)) {
+		isRunning = 0;
+		}
+		
 		if (!isRunning) {
 			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
 		}
@@ -849,7 +897,7 @@ void cpuInit(CPU_p cpu) {
 	}
 	
 	for (int i = 0; i < MAX_MEMORY; i++) {
-		memory[i] = NOP;
+		memory[i] = 0;
 	}
 	
 	for (int i = 0; i < MAX_BUFFERS; i++) {
