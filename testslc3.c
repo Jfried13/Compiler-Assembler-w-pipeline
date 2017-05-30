@@ -12,9 +12,7 @@ int dialog (CPU_p cpu);
 
 char getch ();
 
-void editBreakPoint(CPU_p cpu);
-
-int encounteredBreakPoint(CPU_p cpu, unsigned short pc);
+void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
 void writeMemory(char * fileToWriteToName);
 
@@ -23,7 +21,7 @@ void writeMemory(char * fileToWriteToName);
 //unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
-int startMem;
+
 
 /*
 	This function is the offset6 sign extender.
@@ -72,11 +70,11 @@ int trap(CPU_p cpu, int trap_vector) {
 			break;
 		case PUTS:
 			i = 0;
-			temp = (char ) memory[(cpu->r[0] - startMem + i)];
+			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			while ((temp)) {  
 			  printf("%c", (temp));
 			  i++;
-			  temp = memory[(cpu->r[0] - startMem + i)];
+			  temp = memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
 			}
 			break;
 		case HALT:
@@ -107,6 +105,14 @@ void setCC(CPU_p cpu, Register Rd) {
 }
 	
 
+/*
+	This function sets the appropriate flags.
+*/
+void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos) {
+	cpu->N = neg;
+	cpu->Z = zero;
+	cpu->P = pos;
+}
 
 
 /*
@@ -146,61 +152,26 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 		printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
 	}
 	printf("\t\tRegisters \t\t    Memory\n");
-	int j = startMem + mem;
-	int i = 0;
-	for(i = 0; i <= 7; i++) {
-		printf("\t\tR%d: x%04X \t\t x%X: x%04X", i, cpu->r[i], j + i, memory[i + mem]);
-		if(encounteredBreakPoint(cpu, j + i)) {
-			printf("*\n");
-		} else {
-			printf("\n");
-		}
-	}
-	
-	
-	j = startMem + BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
-	int k = 0;
-	for(i ; i <= 10 ; i++) {
-		printf("\t\t\t\t\t x%X: x%04X",j + k, memory[i + mem]);
-		if(encounteredBreakPoint(cpu, j + k)) {
-			printf("*\n");
-		} else {
-			printf("\n");
-		}
-		k++;
-	}
-	
-	
-	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X",cpu->PC,cpu->ir,j+3, memory[11 + mem]);
-	if(encounteredBreakPoint(cpu, j + 3)) {
-			printf("*\n");
-		} else {
-			printf("\n");
-		}
-	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X",cpu->A,cpu->B,j+4, memory[12 + mem]);
-	if(encounteredBreakPoint(cpu, j + 4)) {
-			printf("*\n");
-		} else {
-			printf("\n");
-		}
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X",cpu->MAR + startMem,cpu->MDR,j+5, memory[13 + mem]);
-	if(encounteredBreakPoint(cpu, j + 5)) {
-			printf("*\n");
-		} else {
-			printf("\n");
-		}
-	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X",cpu->N,cpu->Z,cpu->P,j+6, memory[14 + mem]);
-	if(encounteredBreakPoint(cpu, j + 6)) {
-			printf("*\n");
-		} else {
-			printf("\n");
-		}
-	printf("\t\t\t\t\t x%X: x%04X",j+7, memory[15 + mem]);
-	if(encounteredBreakPoint(cpu, j + 7)) {
-			printf("*\n");
-		} else {
-			printf("\n");
-		}
+	int i = START_MEM + mem;
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
+
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[2 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
+	printf("\t\tR%d: x%04X \t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[7 + mem]);
+
+	i = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
+	printf("\t\t\t\t\t x%X: x%04X\n",i, memory[8 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+1, memory[9 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+2, memory[10 + mem]);
+	printf("\t\tPC:x%0.4X    IR:x%04X     x%X: x%04X\n",cpu->PC,cpu->ir,i+3, memory[11 + mem]);
+	printf("\t\tA: x%04X    B: x%04X     x%X: x%04X\n",cpu->A,cpu->B,i+4, memory[12 + mem]);
+	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X\n",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,i+5, memory[13 + mem]);
+	printf("\t\tCC: N: %d  Z: %01d P: %d      x%X: x%04X\n",cpu->N,cpu->Z,cpu->P,i+6, memory[14 + mem]);
+	printf("\t\t\t\t\t x%X: x%04X\n",i+7, memory[15 + mem]);
 	printf("\t\tStep: %d  NOP Count: %d\n\n", stepCount, nopCount);
 	if (collisionFound) {
 		printf("Collision Detected!\n");
@@ -240,8 +211,9 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 */
 int dialog(CPU_p cpu) {
 	int opNum = 0, isRunning = 0;
-	unsigned short placeInMemory;
+	unsigned int placeInMemory;
 	unsigned short newValue; 
+	int dontDeleteThisGarbage = 0;
 	char newMemoryValue[4];
 	char * charPtr;
 	char fileName[MAX_FILE_NAME];
@@ -259,8 +231,7 @@ int dialog(CPU_p cpu) {
 						break;
 					}
 					int i = 0;
-					fscanf(inputFile, "%04X", &startMem);
-					cpu->PC = startMem;
+					fscanf(inputFile, "%04X", &dontDeleteThisGarbage);
 					while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
 						i++;
 					}
@@ -284,31 +255,28 @@ int dialog(CPU_p cpu) {
 						displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					}
 					break;
-				case SET_BRKPTS :
-					editBreakPoint(cpu);
-					displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
-					break;
 				case DISP_MEM:
 					printf("Position to move to? (in hex): ");
 					scanf("%4x", &memShift);
-					if(memShift - startMem > MAX_MEMORY - DISP_BOUNDARY) {
+					if(memShift - START_MEM > MAX_MEMORY - DISP_BOUNDARY) {
 						printf("Error: out of memory");
 						memShift = 0;
-						displayScreen(cpu, memShift - startMem, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
 						break;
 					} else {
-						displayScreen(cpu, memShift - startMem, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
 					}
 					break;
 				case EDIT:
 					printf("What memory address would you like to edit: ");
 					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory, memory[placeInMemory - startMem]);
+					printf("The contents of location %04x is  %04x\n", placeInMemory - START_MEM + 1, memory[placeInMemory - START_MEM + 1]);
 					printf("What would you like the new value in location %04x to be: ", placeInMemory);
 					scanf("%s", &newMemoryValue);
+					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
-					memory[placeInMemory - startMem] = newValue;
-					displayScreen(cpu, placeInMemory - startMem, 0, 0, 0, 0, charPtr);
+					memory[placeInMemory - START_MEM + 1] = newValue;
+					displayScreen(cpu, placeInMemory - START_MEM - 7, 0, 0, 0, 0, charPtr);
 					break;
 				case RUN:
 					controller(cpu, 1);
@@ -317,6 +285,9 @@ int dialog(CPU_p cpu) {
 				case EXIT:
 					printf("Simulation Terminated.");
 					break;
+				case SET_BRKPTS:
+
+					break;
 			}
 		}
 }
@@ -324,34 +295,27 @@ int dialog(CPU_p cpu) {
 /*
 	This method compares the current value of PC against any breakpoints entered by the user. 
 */
-int encounteredBreakPoint(CPU_p cpu, Register pc) {
-		
+int encounteredBreakPont(CPU_p cpu) {
 		int encountered = 0;
 		int i;
 		for (i = 0; i < MAX_BREAKPOINTS; i++) {
-			if(pc == cpu->breakPoints[i]) {
+			if(cpu->PC == cpu->breakPoints[i]) {
 				encountered = 1;
 				i = MAX_BREAKPOINTS;
 			}
-	
 		}
-		
 		return encountered; 
 }
 
 /*
-	This function takes a prompts the User for a breakPoint and searches the existing collection of breakpoints.
+	This function takes a passed breakPoint and searches the existing collection of breakpoints.
 	If a match is found the breakPoint is removed from the collection. If a match isn't found the
 	breakPoint is added. 
 */
-void editBreakPoint(CPU_p cpu) {
-	unsigned int breakPoint;
-	printf("Enter Memory Location of Desired Breakpoint: ");
-	scanf("%04x", &breakPoint);
-	//This needs to be changed to some variable initial pc.
-	//breakPoint = breakPoint - START_MEM;
+void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
 	int i;
 	int found = 0;
+	printf("Enter a breakpoint: ");
 	for(i = 0; i < MAX_BREAKPOINTS; i++) {
 		//User wants to remove this breakpoint
 		if (cpu->breakPoints[i] == breakPoint) {
@@ -365,17 +329,13 @@ void editBreakPoint(CPU_p cpu) {
 	//If this address doesn't exist find first available spot and add it to the collection of breakpoints
 	if(!found) {
 		for(i = 0; i < MAX_BREAKPOINTS; i++) {
-			//found the first open spot
-			if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
-				//Add in new break point and exit the loop;
-				cpu->breakPoints[i] = breakPoint;
-				i = MAX_BREAKPOINTS;
-			}		
-		}
+		//found the first open spot
+		if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
+			//Add in new break point and exit the loop;
+			cpu->breakPoints[i] = breakPoint;
+			i = MAX_BREAKPOINTS;
+		}		
 	}
-	printf("breakPoints:");
-	for(i = 0; i < 4; i++) {
-		printf("0x%04X ", cpu->breakPoints[i]);
 	}
 }
 
@@ -424,19 +384,20 @@ int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCh
 	if (opcode != ST && opcode != STR && opcode != STI) {
 		Rd = (headOfPrefetch & DR_MASK) >> DR_SHIFT; //Gets destination register
 		Rs1 = (collisionCheck & SR_MASK) >> SR_SHIFT; //Gets source register 1
-		
+		// if Rd or Rs1 are R6 then check to see if collisionCheck == PP
 		Rs2 = -1;
 		
 		if (!((collisionCheck & HIGH_ORDER_BIT_VALUE5) || (collisionCheck & HIGH_ORDER_BIT_VALUE6) 
 			|| (collisionCheck & HIGH_ORDER_BIT_VALUE8) || (collisionCheck & HIGH_ORDER_BIT_VALUE9))) {   //Checks if this value is a sext.
 			Rs2 = collisionCheck & SR2_MASK; //Gets the source register 2 if not a sext.
 		}
+
 	} else {
 		Rd = (collisionCheck & DR_MASK) >> DR_SHIFT; //Gets destination register
 		Rs1 = (headOfPrefetch & SR_MASK) >> SR_SHIFT; //Gets source register 1
 
-		
 		Rs2 = -1;
+
 		if (!((headOfPrefetch & HIGH_ORDER_BIT_VALUE5) || (headOfPrefetch & HIGH_ORDER_BIT_VALUE6) 
 			|| (headOfPrefetch & HIGH_ORDER_BIT_VALUE8) || (headOfPrefetch & HIGH_ORDER_BIT_VALUE9))) {   //Checks if this value is a sext.
 			Rs2 = headOfPrefetch & SR2_MASK; //Gets the source register 2 if not a sext.
@@ -446,6 +407,15 @@ int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCh
 	
 	if (Rd == Rs1 || (Rs2 >= 0 && Rd == Rs2)) {  //Checks if Rd is Rs1 or that Rd is Rs2 as long as Rs2 is not a sext.
 		nopCount = 4 - (collisionPos - headPos);
+	}
+
+	if(opcode == PP && (headOfPrefetch >> OPCODE_SHIFT == PP)) {
+		printf("\n\n\n two pushes or pops \n\n\n\n\n");
+		nopCount = 4 - (collisionPos - headPos);		
+	}
+	if(opcode == PP && (Rd == 6 || Rs1 == 6)) {
+		//printf("\n\n\n %i \n\n\n", collisionPos - headPos); 
+		nopCount = collisionPos - headPos;		
 	}
 		
 	if (opcode == BR) {
@@ -474,7 +444,7 @@ Register predecode (CPU_p cpu) {
 	if (cpu->prefetch.head >= 8) {
 		for (; i < cpu->PC + 8; i++, j++) {
 			
-			cpu->prefetch.values[j] = memory[i - startMem];
+			cpu->prefetch.values[j] = memory[i - CONVERT_TO_DECIMAL];
 		}		
 		cpu->prefetch.head = 0;
 		cpu->prefetch.nopCount = 79;
@@ -530,17 +500,13 @@ int controller (CPU_p cpu, int isRunning) {
 	char *temp = malloc(sizeof(char) * 8);
 	int value = 0, stepCounter = 1;
     state = STORE;
-	int j, memStallCount = 0, hasAccessedMem = 0; //Memory was accessed
+	int j;
 	Register predecodeValue = 0;
-	struct BUFFER memHolder;
 	
-	
-	
-    for (;;) {
-		if(isRunning && encounteredBreakPoint(cpu, cpu->PC)) {
+	if(isRunning && encounteredBreakPont(cpu)) {
 		isRunning = 0;
-		}
-		
+	}
+    for (;;) {
 		if (!isRunning) {
 			displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
 		}
@@ -589,9 +555,13 @@ int controller (CPU_p cpu, int isRunning) {
 						case NOP:
 							break;
 						case PP:
-							cpu->r[6] = cpu->buffers[3].A;
-							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) { //Pop
+							//cpu->r[6] = cpu->buffers[3].A;
+							
+							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
 								cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].B;
+								cpu->r[6] = cpu->r[6] + 1;
+							} else {
+								cpu->r[6] = cpu->r[6] - 1;
 							}
 							break;
 					}
@@ -601,112 +571,56 @@ int controller (CPU_p cpu, int isRunning) {
 			case MEM:
 				strcpy(temp, "MEM");
 				//may need to add in a check if the last buffer's PC is NOP (same as other states).
-                if (!hasAccessedMem) {
-					if (cpu->buffers[1].isStalled) {
-						cpu->prefetch.head = PREFETCH_SIZE;
-						
-						cpu->buffers[0] = initBuffer();
-						cpu->buffers[1] = initBuffer();
-					} else {
-						if (!cpu->buffers[2].isStalled) {
-							cpu->buffers[3] = cpu->buffers[2];
-						}
-						switch (cpu->buffers[3].Opcode) {
-							case ST:
-								printf("in ST\n");
-								printBuffer(cpu, cpu->buffers[3]);
-								//printf("value in B: 0x%04X\n", cpu->buffers[2].B);
-								memory[cpu->buffers[3].A - startMem] = cpu->r[cpu->buffers[3].Rd];
-								hasAccessedMem = 1;
-								cpu->prefetch.nopCount = 10;
-								memStallCount = 10;
-								memHolder = cpu->buffers[3];
-								cpu->buffers[3] = initBuffer();
-								cpu->buffers[2].isStalled = 1;
-
-								printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - startMem]);
-								break;
-							case STR:
-								memory[cpu->buffers[3].A - startMem] = cpu->buffers[3].B;
-								hasAccessedMem = 1;
-								cpu->prefetch.nopCount = 10;
-								memStallCount = 10;
-								memHolder = cpu->buffers[3];
-								cpu->buffers[3] = initBuffer();
-								cpu->buffers[2].isStalled = 1;
-
-								break;
-							case STI:  //not sure of how to handle STI yet
-								printf("in STI\n");
-								cpu->buffers[3].A = memory[cpu->buffers[3].A - startMem];
-								hasAccessedMem = 1;
-								cpu->prefetch.nopCount = 10;
-								memStallCount = 10;
-								memHolder = cpu->buffers[3];
-								cpu->buffers[3] = initBuffer();
-								cpu->buffers[2].isStalled = 1;
-
-								//printf("value in A: 0x%04X\n");
-								printBuffer(cpu, cpu->buffers[3]);
-								break;
-							case LD:
-								cpu->buffers[3].B = memory[cpu->buffers[3].A - startMem];
-								hasAccessedMem = 1;
-								cpu->prefetch.nopCount = 10;
-								memStallCount = 10;
-								memHolder = cpu->buffers[3];
-								cpu->buffers[3] = initBuffer();
-								cpu->buffers[2].isStalled = 1;
-
-								break;
-							case LDR:
-								cpu->buffers[3].B = memory[cpu->buffers[3].A - startMem];
-								hasAccessedMem = 1;
-								cpu->prefetch.nopCount = 10;
-								memStallCount = 10;
-								memHolder = cpu->buffers[3];
-								cpu->buffers[3] = initBuffer();
-								cpu->buffers[2].isStalled = 1;
-								break;
-							case LDI:
-								cpu->buffers[3].A = memory[cpu->buffers[3].A - startMem];
-								hasAccessedMem = 1;
-								cpu->prefetch.nopCount = 10;
-								memStallCount = 10;
-								memHolder = cpu->buffers[3];
-								cpu->buffers[3] = initBuffer();
-								cpu->buffers[2].isStalled = 1;
-
-								//this will need to call LD afterwards
-								break;
-							case PP:
-								if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) { //Pop
-									cpu->buffers[3].B = memory[cpu->buffers[3].A - 1];
-								} else { //Push
-									memory[cpu->buffers[3].A] = cpu->buffers[3].Rd;
-								}
-								break;
-						}
+                if (cpu->buffers[1].isStalled) {
+                    cpu->prefetch.head = PREFETCH_SIZE;
+					
+					cpu->buffers[0] = initBuffer();
+					cpu->buffers[1] = initBuffer();
+                } else {
+					if (!cpu->buffers[2].isStalled) {
+						cpu->buffers[3] = cpu->buffers[2];
 					}
+                    switch (cpu->buffers[3].Opcode) {
+                        case ST:
+							printf("in ST\n");
+							printBuffer(cpu, cpu->buffers[3]);
+							//printf("value in B: 0x%04X\n", cpu->buffers[2].B);
+							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].Rd];
+							printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
+							break;
+                        case STR:
+							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->buffers[3].B;
+							break;
+                        case STI:  //not sure of how to handle STI yet
+							printf("in STI\n");
+							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							//printf("value in A: 0x%04X\n");
+							printBuffer(cpu, cpu->buffers[3]);
+							break;
+                        case LD:
+							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							break;
+                        case LDR:
+							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							break;
+                        case LDI:
+							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							//this will need to call LD afterwards
+							break;
+						case PP:
+							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
+								cpu->buffers[3].B = memory[cpu->buffers[3].A];
+							} else {
+								memory[cpu->buffers[3].A - START_MEM] = cpu->r[cpu->buffers[3].Rd];
+							}
+							break;
+                    }
+                }
+				if (cpu->buffers[2].isStalled) {
+					state = STORE;
+					cpu->buffers[2].isStalled = 0;
 				} else {
-					if (memStallCount > 0) {
-						state = MEM;
-						cpu->buffers[3] = initBuffer();
-						memStallCount--;
-					} else {
-						cpu->buffers[3] = memHolder;
-						hasAccessedMem = 0;
-						cpu->buffers[2].isStalled = 0;
-					}
-				}
-				
-				if (!hasAccessedMem) {
-					if (cpu->buffers[2].isStalled) {
-						state = STORE;
-						cpu->buffers[2].isStalled = 0;
-					} else {
-						state = EXECUTE;
-					}
+					state = EXECUTE;
 				}
                 break;
 			case EXECUTE: // Note that ST does not have an execute microstate
@@ -805,10 +719,11 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->buffers[2].A = cpu->buffers[2].PC + sext9(cpu->buffers[2].SEXT);
 							break;
 						case PP:
-							if(cpu->buffers[2].IR & PUSH_POP_BIT_MASK) { //Pop
-								cpu->buffers[2].A++;
-							} else { //Push
-								cpu->buffers[2].A--;
+							if(cpu->buffers[2].IR & PUSH_POP_BIT_MASK) {
+								//cpu->buffers[2].A = cpu->buffers[2].A - 1;
+							} else {
+								printf("here\n");
+								cpu->buffers[2].A = cpu->buffers[2].A - 1;
 							}
 							break;
 					}
@@ -882,10 +797,8 @@ int controller (CPU_p cpu, int isRunning) {
 						case NOP:
 							break;
 						case PP:
-							cpu->buffers[1].A = cpu->r[6]; //Save R6 in A
-							if(!(cpu->buffers[1].IR & PUSH_POP_BIT_MASK)) { //push
-								cpu->buffers[1].Rd = cpu->r[cpu->buffers[1].Rd]; //Get what Sr is actually holding.
-							}
+							//cpu->r[6] = cpu->r[6] - 1;
+							cpu->buffers[1].A = cpu->r[6];
 							break;
 					}
 				}
@@ -895,7 +808,7 @@ int controller (CPU_p cpu, int isRunning) {
 				strcpy(temp, "FETCH");
 				predecodeValue = predecode(cpu);
 				if (predecodeValue != NOP) {
-					cpu->buffers[0].A = (cpu->PC - startMem);
+					cpu->buffers[0].A = (cpu->PC - CONVERT_TO_DECIMAL);
 					cpu->PC++;	// increment PC
 					cpu->buffers[0].B = memory[cpu->buffers[0].A];
 					cpu->ir = cpu->buffers[0].B;
@@ -928,7 +841,6 @@ int controller (CPU_p cpu, int isRunning) {
 	This function initializes the cpu fields
 */
 void cpuInit(CPU_p cpu) {
-	startMem = START_MEM;
 	cpu->r[0] = 0x0000;
 	cpu->r[1] = 0x0000;
 	cpu->r[2] = 0x0000;
@@ -957,7 +869,7 @@ void cpuInit(CPU_p cpu) {
 	}
 	
 	for (int i = 0; i < MAX_MEMORY; i++) {
-		memory[i] = 0;
+		memory[i] = NOP;
 	}
 	
 	for (int i = 0; i < MAX_BUFFERS; i++) {
@@ -968,13 +880,13 @@ void cpuInit(CPU_p cpu) {
 //returns 1 if true 0 if false
 int checkIfFileExists(char* fileToCheckIfExists) {
 	FILE* filePtr;
-	filePtr = fopen(fileToCheckIfExists, "r+");
+	filePtr = fopen(fileToCheckIfExists, "r");
 	if(filePtr != NULL) {
 		fclose(filePtr);
 		return 1;
 	} else {
-		return 0;
 		fclose(filePtr);
+		return 0;
 	}
 }
 
@@ -982,27 +894,38 @@ int checkIfFileExists(char* fileToCheckIfExists) {
 void writeMemory(char * fileToWriteToName) {
 	FILE * filePtr;
 	int TRAP25 = 61477;
+	char shouldOverwrite;
 	unsigned int memoryStart, memoryEnd; 
-	int writeOK = 1;
-	
 	//the file exists so promt the user to see if they 
 	//are ok with overwritting the preexisting file right here
 	//include if/else statement to check user decision for overwriting
 	if(checkIfFileExists(fileToWriteToName)) {
-		int choice;
-		printf("This file already exists! 1) to overwrite, 2) to cancel: ");
-		scanf("%d", &choice);
-		if(choice != 1) writeOK = 0;
+		printf("This file exists would you like to overwrite?(y/n): ");
+		scanf("%c", &shouldOverwrite);
+		if(shouldOverwrite == 'y') {
+			filePtr = fopen(fileToWriteToName, "w");
+			printf("Enter the beginning of memory to save from: x");
+			scanf("%4x", &memoryStart);
+			printf("Enter the end of memory to save to: x");
+			scanf("%4x", &memoryEnd);
+			for(int i=memoryStart; i <= memoryEnd; i++) {
+				printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+				fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+			}
+			fclose(filePtr);
+		}
 	//the file doesn't exist so create the new file and write to it
-	} 
-	
-	if (writeOK) {
+	} else {
 		FILE * filePtr;
 		filePtr = fopen(fileToWriteToName, "w");
-		printf("Enter the beginning and end of the memory to save: ");
-		scanf("%4x %4x", &memoryStart, &memoryEnd);
-		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			fprintf(filePtr, "%04x\n", memory[i - startMem]);
+		printf("Enter the beginning of memory to save from: x");
+		scanf("%4x", &memoryStart);
+		printf("Enter the end of memory to save to: x");
+		scanf("%4x", &memoryEnd);
+		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
+		for(int i=memoryStart; i <= memoryEnd; i++) {
+			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
+			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
 		}
 		fclose(filePtr);
 	}
@@ -1013,7 +936,8 @@ void writeMemory(char * fileToWriteToName) {
 	This is the main function that starts the program off.
 */
 int main(int argc, char* argv[]){
-	setvbuf(stdout, NULL, _IONBF, 0);
+
+	//setvbuf(stdout, NULL, _IONBF, 0);
 	isLoaded = 0;
 	memShift = 0;
 	char *temp;
