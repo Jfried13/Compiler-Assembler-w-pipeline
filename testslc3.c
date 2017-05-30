@@ -161,41 +161,80 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	}
 	
 	int i = START_MEM + mem;
-	printf("Registers          ______________\t\t\t\t    Memory\n");
-	printf("R%d: x%04X         |              |\t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
-	printf("R%d: x%04X    FBUFF|  PC:    IR:  |\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
-	printf("R%d: x%04X         | x%04X  x%04X |\t\t\t\t x%X: x%04X\n", 2, cpu->r[2], cpu->buffers[0].PC, cpu->buffers[0].IR, i+2, memory[2 + mem]);
-	printf("R%d: x%04X         |______________|\t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
-	printf("R%d: x%04X          _______________________________________\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
-	printf("R%d: x%04X         |                                       |\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
-	printf("R%d: x%04X    DBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
-	printf("R%d: x%04X         | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%X: x%04X\n", 7, cpu->r[7], cpu->buffers[1].PC, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B, i+7, memory[7 + mem]);
-	i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
-	printf("                  |_______________________________________|\t x%04X: x%04X\n", i, memory[8 + mem]);
-	printf("                   _______________________________________\t x%04X: x%04X\n", i+1, memory[9 + mem]);
-	printf("                  |                                       |\t x%04X: x%04X\n", i+2, memory[10 + mem]);
-	printf("             EBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\t x%04X: x%04X\n", i+3, memory[11 + mem]);
-	printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%04X: x%04X\n", cpu->buffers[2].PC, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, cpu->buffers[2].B, i+4, memory[12 + mem]);
-	printf("                  |_______________________________________|\t x%04X: x%04X\n", i+5, memory[13 + mem]);
-	printf("                   _______________________________________\t x%04X: x%04X\n", i+6, memory[14 + mem]);
-	printf("                  |                                       |\t x%04X: x%04X\n", i+7, memory[15 + mem]);
-	printf("             MBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\n");
-	printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\n", cpu->buffers[3].PC, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, cpu->buffers[3].B);
-	printf("                  |_______________________________________|\n\n");
+	if (cpu->buffers[0].IR != NOP) {
+		printf("Registers          ______________\t\t\t\t    Memory\n");
+		printf("R%d: x%04X         |              |\t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
+		printf("R%d: x%04X    FBUFF|  PC:    IR:  |\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
+		printf("R%d: x%04X         | x%04X  x%04X |\t\t\t\t x%X: x%04X\n", 2, cpu->r[2], cpu->buffers[0].PC, cpu->buffers[0].IR, i+2, memory[2 + mem]);
+		printf("R%d: x%04X         |______________|\t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
+	} else {
+		printf("Registers          _______\t\t\t\t\t    Memory\n");
+		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
+		printf("R%d: x%04X    FBUFF|  NOP  |\t\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
+		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[2 + mem]);
+		printf("R%d: x%04X         |_______|\t\t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
+	
+	}
+	
+	if (cpu->buffers[1].IR != NOP) {
+		printf("R%d: x%04X          _______________________________________\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
+		printf("R%d: x%04X         |                                       |\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
+		printf("R%d: x%04X    DBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
+		printf("R%d: x%04X         | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%X: x%04X\n", 7, cpu->r[7], cpu->buffers[1].PC, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B, i+7, memory[7 + mem]);
+		i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
+		printf("                  |_______________________________________|\t x%04X: x%04X\n", i, memory[8 + mem]);
+	} else {
+		printf("R%d: x%04X          _______\t\t\t\t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
+		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
+		printf("R%d: x%04X    DBUFF|  NOP  |\t\t\t\t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
+		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[7 + mem]);
+		i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
+		printf("                  |_______|\t\t\t\t\t x%04X: x%04X\n", i, memory[8 + mem]);
+	}
+	
+	if (cpu->buffers[2].IR != NOP) {
+		printf("                   _______________________________________\t x%04X: x%04X\n", i+1, memory[9 + mem]);
+		printf("                  |                                       |\t x%04X: x%04X\n", i+2, memory[10 + mem]);
+		printf("             EBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\t x%04X: x%04X\n", i+3, memory[11 + mem]);
+		printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%04X: x%04X\n", cpu->buffers[2].PC, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, cpu->buffers[2].B, i+4, memory[12 + mem]);
+		printf("                  |_______________________________________|\t x%04X: x%04X\n", i+5, memory[13 + mem]);
+	} else {
+		printf("                   _______\t\t\t\t\t x%04X: x%04X\n", i+1, memory[9 + mem]);
+		printf("                  |       |\t\t\t\t\t x%04X: x%04X\n", i+2, memory[10 + mem]);
+		printf("             EBUFF|  NOP  |\t\t\t\t\t x%04X: x%04X\n", i+3, memory[11 + mem]);
+		printf("                  |       |\t\t\t\t\t x%04X: x%04X\n", i+4, memory[12 + mem]);
+		printf("                  |_______|\t\t\t\t\t x%04X: x%04X\n", i+5, memory[13 + mem]);
+	
+	}
+	
+	if (cpu->buffers[3].IR != NOP) {
+		printf("                   _______________________________________\t x%04X: x%04X\n", i+6, memory[14 + mem]);
+		printf("                  |                                       |\t x%04X: x%04X\n", i+7, memory[15 + mem]);
+		printf("             MBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\n");
+		printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\n", cpu->buffers[3].PC, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, cpu->buffers[3].B);
+		printf("                  |_______________________________________|\n\n");
+	} else {
+		printf("                   _______\t\t\t\t\t x%04X: x%04X\n", i+6, memory[14 + mem]);
+		printf("                  |       |\t\t\t\t\t x%04X: x%04X\n", i+7, memory[15 + mem]);
+		printf("             MBUFF|  NOP  |\n");
+		printf("                  |       |\n");
+		printf("                  |_______|\n\n");
+	
+	}
 	printf("\t\tStep: %d  NOP Count: %d\n\n", stepCount, nopCount);
 	if (collisionFound) {
 		printf("Collision Detected!\n");
 	} else {
 		printf("\n");
 	}
-	printf("\nPipeLine Info:\n\n");
+	
 	if (isRunning) {
 		printf("Current Stage: %s\n", stage);
 	} else {
 		printf("\n");
 	}
 	
-	printf("FBUFF: PC: 0x%04X  IR: 0x%04X\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
+	/*printf("FBUFF: PC: 0x%04X  IR: 0x%04X\n", cpu->buffers[0].PC, cpu->buffers[0].IR);
 	printf("DBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %02d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[1].PC, 
 			cpu->buffers[1].IR, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, 
 			cpu->buffers[1].B, cpu->buffers[1].SEXT, cpu->buffers[1].isStalled);
@@ -205,7 +244,7 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	printf("MBUFF: PC: 0x%04X  IR: 0x%04X  Opcode: %02d  DR: 0x%04X  A: 0x%04X  B: 0x%04X  SEXT: 0x%04X  Stalled: %d\n", cpu->buffers[3].PC, 
 			cpu->buffers[3].IR, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, 
 			cpu->buffers[3].B, cpu->buffers[3].SEXT, cpu->buffers[3].isStalled);	
-	
+	*/
 	if (!isRunning) {
 		printf("\n1) Load,  2) Save,  3) Step,  4) Display Memory,  5) Edit,  6) Run,  7) (Un)Set Breakpts,  8) Exit\n");
 	} else {
@@ -882,7 +921,7 @@ void cpuInit(CPU_p cpu) {
 	}
 	
 	for (int i = 0; i < MAX_MEMORY; i++) {
-		memory[i] = NOP;
+		memory[i] = 0x0;
 	}
 	
 	for (int i = 0; i < MAX_BUFFERS; i++) {

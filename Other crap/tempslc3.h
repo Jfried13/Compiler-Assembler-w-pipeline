@@ -140,6 +140,7 @@ typedef struct PREFETCH {
 	int nopCount;
 	Register PC;
 	int collisionFound;
+	int isEmpty;
 } PRE;
 
 typedef struct CPU_s{
