@@ -221,7 +221,13 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 		printf("                  |_______|\n\n");
 	
 	}
-	printf("\t\tStep: %d  NOP Count: %d\n\n", stepCount, nopCount);
+	
+	if (!cpu->hasAccessedMem) {
+		printf("\t\tStep: %d  NOP Count: %d\n\n", stepCount, nopCount);
+	} else {
+		printf("\t\tStep: %d  Memory has been accessed! NOP Count: %d\n\n", stepCount, cpu->memStepCount);
+	}
+	
 	if (collisionFound) {
 		printf("Collision Detected!\n");
 	} else {
@@ -459,11 +465,9 @@ int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCh
 	}
 
 	if(opcode == PP && (headOfPrefetch >> OPCODE_SHIFT == PP)) {
-		printf("\n\n\n two pushes or pops \n\n\n\n\n");
 		nopCount = 4 - (collisionPos - headPos);		
 	}
 	if(opcode == PP && (Rd == 6 || Rs1 == 6)) {
-		//printf("\n\n\n %i \n\n\n", collisionPos - headPos); 
 		nopCount = collisionPos - headPos;		
 	}
 		
@@ -633,16 +637,12 @@ int controller (CPU_p cpu, int isRunning) {
 					}
                     switch (cpu->buffers[3].Opcode) {
                         case ST:
-							//printf("in ST\n");
-							//printBuffer(cpu, cpu->buffers[3]);
-							//printf("value in B: 0x%04X\n", cpu->buffers[2].B);
 							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].Rd];
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
 							cpu->hasAccessedMem = 1;
 							cpu->memStepCount = 10;
 							tempHolder = cpu->buffers[3];
-							//printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
 							break;
                         case STR:
 							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->buffers[3].B;
@@ -653,15 +653,12 @@ int controller (CPU_p cpu, int isRunning) {
 							tempHolder = cpu->buffers[3];
 							break;
                         case STI:  //not sure of how to handle STI yet
-							//printf("in STI\n");
 							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
 							cpu->hasAccessedMem = 1;
 							cpu->memStepCount = 10;
 							tempHolder = cpu->buffers[3];
-							//printf("value in A: 0x%04X\n");
-							//printBuffer(cpu, cpu->buffers[3]);
 							break;
                         case LD:
 							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
@@ -686,7 +683,6 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->hasAccessedMem = 1;
 							cpu->memStepCount = 10;
 							tempHolder = cpu->buffers[3];
-							//this will need to call LD afterwards
 							break;
 						case PP:
 							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
@@ -704,14 +700,12 @@ int controller (CPU_p cpu, int isRunning) {
                 }
 				
 				for (; cpu->memStepCount > 0; cpu->memStepCount--) {
-					printf("in here\n");
 					cpu->buffers[3] = initBuffer();
 					displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
 					scanf("%c", &charToPrint);
 				}
 				
 				if (cpu->memStepCount <= 0 && cpu->hasAccessedMem) {
-					printf("or here\n");
 					cpu->hasAccessedMem = 0;
 					cpu->buffers[3] = tempHolder;
 				}
