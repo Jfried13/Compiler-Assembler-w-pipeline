@@ -70,10 +70,10 @@
 #define SEXT11_MASK 0x07FF
 
 //may need to change this
-#define CONVERT_TO_DECIMAL 0x3000
+//#define CONVERT_TO_DECIMAL 0x3000
 
 #define START_MEM 0x3000
-#define BOTTOM_HALF 0x3008
+#define BOTTOM_HALF 8
 #define DISP_BOUNDARY 17
 
 #define OPCODE_SHIFT 12

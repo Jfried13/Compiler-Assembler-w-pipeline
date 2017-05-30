@@ -23,7 +23,7 @@ void writeMemory(char * fileToWriteToName);
 //unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
-
+int startMem;
 
 /*
 	This function is the offset6 sign extender.
@@ -72,11 +72,11 @@ int trap(CPU_p cpu, int trap_vector) {
 			break;
 		case PUTS:
 			i = 0;
-			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+			temp = (char ) memory[(cpu->r[0] - startMem + i)];
 			while ((temp)) {  
 			  printf("%c", (temp));
 			  i++;
-			  temp = memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+			  temp = memory[(cpu->r[0] - startMem + i)];
 			}
 			break;
 		case HALT:
@@ -146,7 +146,7 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 		printf("\t\tWelcome to the LC-3 Simulator Simulator\n\n");
 	}
 	printf("\t\tRegisters \t\t    Memory\n");
-	int j = START_MEM + mem;
+	int j = startMem + mem;
 	int i = 0;
 	for(i = 0; i <= 7; i++) {
 		printf("\t\tR%d: x%04X \t\t x%X: x%04X", i, cpu->r[i], j + i, memory[i + mem]);
@@ -158,9 +158,9 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	}
 	
 	
-	j = BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
+	j = startMem + BOTTOM_HALF + mem; // replace i with the mem dump number if you want.
 	int k = 0;
-	for(i = 8 ; i <= 10 ; i++) {
+	for(i ; i <= 10 ; i++) {
 		printf("\t\t\t\t\t x%X: x%04X",j + k, memory[i + mem]);
 		if(encounteredBreakPoint(cpu, j + k)) {
 			printf("*\n");
@@ -183,7 +183,7 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 		} else {
 			printf("\n");
 		}
-	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X",cpu->MAR + CONVERT_TO_DECIMAL,cpu->MDR,j+5, memory[13 + mem]);
+	printf("\t\tMAR:x%04X  MDR:x%04X     x%X: x%04X",cpu->MAR + startMem,cpu->MDR,j+5, memory[13 + mem]);
 	if(encounteredBreakPoint(cpu, j + 5)) {
 			printf("*\n");
 		} else {
@@ -242,7 +242,6 @@ int dialog(CPU_p cpu) {
 	int opNum = 0, isRunning = 0;
 	unsigned int placeInMemory;
 	unsigned short newValue; 
-	int dontDeleteThisGarbage = 0;
 	char newMemoryValue[4];
 	char * charPtr;
 	char fileName[MAX_FILE_NAME];
@@ -260,7 +259,8 @@ int dialog(CPU_p cpu) {
 						break;
 					}
 					int i = 0;
-					fscanf(inputFile, "%04X", &dontDeleteThisGarbage);
+					fscanf(inputFile, "%04X", &startMem);
+					cpu->PC = startMem;
 					while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
 						i++;
 					}
@@ -291,25 +291,25 @@ int dialog(CPU_p cpu) {
 				case DISP_MEM:
 					printf("Position to move to? (in hex): ");
 					scanf("%4x", &memShift);
-					if(memShift - START_MEM > MAX_MEMORY - DISP_BOUNDARY) {
+					if(memShift - startMem > MAX_MEMORY - DISP_BOUNDARY) {
 						printf("Error: out of memory");
 						memShift = 0;
-						displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, memShift - startMem, 0, 0, 0, 0, charPtr);
 						break;
 					} else {
-						displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, memShift - startMem, 0, 0, 0, 0, charPtr);
 					}
 					break;
 				case EDIT:
 					printf("What memory address would you like to edit: ");
 					scanf("%04x", &placeInMemory);
-					printf("The contents of location %04x is  %04x\n", placeInMemory - START_MEM + 1, memory[placeInMemory - START_MEM + 1]);
+					printf("The contents of location %04x is  %04x\n", placeInMemory - startMem + 1, memory[placeInMemory - startMem + 1]);
 					printf("What would you like the new value in location %04x to be: ", placeInMemory);
 					scanf("%s", &newMemoryValue);
 					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
-					memory[placeInMemory - START_MEM + 1] = newValue;
-					displayScreen(cpu, placeInMemory - START_MEM - 7, 0, 0, 0, 0, charPtr);
+					memory[placeInMemory - startMem + 1] = newValue;
+					displayScreen(cpu, placeInMemory - startMem - 7, 0, 0, 0, 0, charPtr);
 					break;
 				case RUN:
 					controller(cpu, 1);
@@ -475,7 +475,7 @@ Register predecode (CPU_p cpu) {
 	if (cpu->prefetch.head >= 8) {
 		for (; i < cpu->PC + 8; i++, j++) {
 			
-			cpu->prefetch.values[j] = memory[i - CONVERT_TO_DECIMAL];
+			cpu->prefetch.values[j] = memory[i - startMem];
 		}		
 		cpu->prefetch.head = 0;
 		cpu->prefetch.nopCount = 79;
@@ -617,7 +617,7 @@ int controller (CPU_p cpu, int isRunning) {
 								printf("in ST\n");
 								printBuffer(cpu, cpu->buffers[3]);
 								//printf("value in B: 0x%04X\n", cpu->buffers[2].B);
-								memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].Rd];
+								memory[cpu->buffers[3].A - startMem] = cpu->r[cpu->buffers[3].Rd];
 								hasAccessedMem = 1;
 								cpu->prefetch.nopCount = 10;
 								memStallCount = 10;
@@ -625,10 +625,10 @@ int controller (CPU_p cpu, int isRunning) {
 								cpu->buffers[3] = initBuffer();
 								cpu->buffers[2].isStalled = 1;
 
-								printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
+								printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - startMem]);
 								break;
 							case STR:
-								memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->buffers[3].B;
+								memory[cpu->buffers[3].A - startMem] = cpu->buffers[3].B;
 								hasAccessedMem = 1;
 								cpu->prefetch.nopCount = 10;
 								memStallCount = 10;
@@ -639,7 +639,7 @@ int controller (CPU_p cpu, int isRunning) {
 								break;
 							case STI:  //not sure of how to handle STI yet
 								printf("in STI\n");
-								cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+								cpu->buffers[3].A = memory[cpu->buffers[3].A - startMem];
 								hasAccessedMem = 1;
 								cpu->prefetch.nopCount = 10;
 								memStallCount = 10;
@@ -651,7 +651,7 @@ int controller (CPU_p cpu, int isRunning) {
 								printBuffer(cpu, cpu->buffers[3]);
 								break;
 							case LD:
-								cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+								cpu->buffers[3].B = memory[cpu->buffers[3].A - startMem];
 								hasAccessedMem = 1;
 								cpu->prefetch.nopCount = 10;
 								memStallCount = 10;
@@ -661,7 +661,7 @@ int controller (CPU_p cpu, int isRunning) {
 
 								break;
 							case LDR:
-								cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+								cpu->buffers[3].B = memory[cpu->buffers[3].A - startMem];
 								hasAccessedMem = 1;
 								cpu->prefetch.nopCount = 10;
 								memStallCount = 10;
@@ -670,7 +670,7 @@ int controller (CPU_p cpu, int isRunning) {
 								cpu->buffers[2].isStalled = 1;
 								break;
 							case LDI:
-								cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+								cpu->buffers[3].A = memory[cpu->buffers[3].A - startMem];
 								hasAccessedMem = 1;
 								cpu->prefetch.nopCount = 10;
 								memStallCount = 10;
@@ -893,7 +893,7 @@ int controller (CPU_p cpu, int isRunning) {
 				strcpy(temp, "FETCH");
 				predecodeValue = predecode(cpu);
 				if (predecodeValue != NOP) {
-					cpu->buffers[0].A = (cpu->PC - CONVERT_TO_DECIMAL);
+					cpu->buffers[0].A = (cpu->PC - startMem);
 					cpu->PC++;	// increment PC
 					cpu->buffers[0].B = memory[cpu->buffers[0].A];
 					cpu->ir = cpu->buffers[0].B;
@@ -926,6 +926,7 @@ int controller (CPU_p cpu, int isRunning) {
 	This function initializes the cpu fields
 */
 void cpuInit(CPU_p cpu) {
+	startMem = START_MEM;
 	cpu->r[0] = 0x0000;
 	cpu->r[1] = 0x0000;
 	cpu->r[2] = 0x0000;
@@ -987,8 +988,8 @@ void writeMemory(char * fileToWriteToName) {
 
 		filePtr = fopen(fileToWriteToName, "w");
 		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+			printf("i = %i i = x%04x\n", i, memory[i - startMem]);
+			fprintf(filePtr, "%04x\n", memory[i - startMem]);
 		}
 		fclose(filePtr);
 
@@ -1000,8 +1001,8 @@ void writeMemory(char * fileToWriteToName) {
 		scanf("%4x %4x", &memoryStart, &memoryEnd);
 		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
 		for(int i=memoryStart + 1; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+			printf("i = %i i = x%04x\n", i, memory[i - startMem]);
+			fprintf(filePtr, "%04x\n", memory[i - startMem]);
 		}
 		fclose(filePtr);
 	}
