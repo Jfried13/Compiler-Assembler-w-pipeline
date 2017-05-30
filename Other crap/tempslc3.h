@@ -122,6 +122,7 @@ typedef struct BUFFER {
 	Register A;		//16-bit value from Rs
 	Register B;		//16-bit value from either Rs2 or SEXT(immed)
 	Register SEXT;
+	char stalled;
 	int isStalled;
 	int N;
 	int Z;
@@ -148,7 +149,7 @@ typedef struct CPU_s{
 	Register A, B, Res;
 	Register PC, ir;
 	Register MAR, MDR;
-	int reachedInput;
+	int reachedInput, hasAccessedMem, memStepCount;
 	ALU_s alu;
 	unsigned int N;
 	unsigned int P;

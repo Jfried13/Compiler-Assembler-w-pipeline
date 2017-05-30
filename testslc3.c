@@ -152,7 +152,7 @@ char getch() {
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount, int collisionFound, char *stage) {
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 5; i++) {
 		printf("\n");
 	}
 	
@@ -164,13 +164,13 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	if (cpu->buffers[0].IR != NOP) {
 		printf("Registers          ______________\t\t\t\t    Memory\n");
 		printf("R%d: x%04X         |              |\t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
-		printf("R%d: x%04X    FBUFF|  PC:    IR:  |\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
+		printf("R%d: x%04X    FBUFF|  PC:    IR:  | %c\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], cpu->buffers[0].stalled, i+1, memory[1 + mem]);
 		printf("R%d: x%04X         | x%04X  x%04X |\t\t\t\t x%X: x%04X\n", 2, cpu->r[2], cpu->buffers[0].PC, cpu->buffers[0].IR, i+2, memory[2 + mem]);
 		printf("R%d: x%04X         |______________|\t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
 	} else {
 		printf("Registers          _______\t\t\t\t\t    Memory\n");
 		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
-		printf("R%d: x%04X    FBUFF|  NOP  |\t\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], i+1, memory[1 + mem]);
+		printf("R%d: x%04X    FBUFF|  NOP  | %c\t\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], cpu->buffers[0].stalled, i+1, memory[1 + mem]);
 		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[2 + mem]);
 		printf("R%d: x%04X         |_______|\t\t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
 	
@@ -179,14 +179,14 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	if (cpu->buffers[1].IR != NOP) {
 		printf("R%d: x%04X          _______________________________________\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
 		printf("R%d: x%04X         |                                       |\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
-		printf("R%d: x%04X    DBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
+		printf("R%d: x%04X    DBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  | %c\t x%X: x%04X\n", 6, cpu->r[6], cpu->buffers[1].stalled, i+6, memory[6 + mem]);
 		printf("R%d: x%04X         | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%X: x%04X\n", 7, cpu->r[7], cpu->buffers[1].PC, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B, i+7, memory[7 + mem]);
 		i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
 		printf("                  |_______________________________________|\t x%04X: x%04X\n", i, memory[8 + mem]);
 	} else {
 		printf("R%d: x%04X          _______\t\t\t\t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
 		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
-		printf("R%d: x%04X    DBUFF|  NOP  |\t\t\t\t\t x%X: x%04X\n", 6, cpu->r[6], i+6, memory[6 + mem]);
+		printf("R%d: x%04X    DBUFF|  NOP  | %c\t\t\t\t\t x%X: x%04X\n", 6, cpu->r[6], cpu->buffers[1].stalled, i+6, memory[6 + mem]);
 		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[7 + mem]);
 		i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
 		printf("                  |_______|\t\t\t\t\t x%04X: x%04X\n", i, memory[8 + mem]);
@@ -195,13 +195,13 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	if (cpu->buffers[2].IR != NOP) {
 		printf("                   _______________________________________\t x%04X: x%04X\n", i+1, memory[9 + mem]);
 		printf("                  |                                       |\t x%04X: x%04X\n", i+2, memory[10 + mem]);
-		printf("             EBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\t x%04X: x%04X\n", i+3, memory[11 + mem]);
+		printf("             EBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  | %c\t x%04X: x%04X\n", cpu->buffers[2].stalled, i+3, memory[11 + mem]);
 		printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%04X: x%04X\n", cpu->buffers[2].PC, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, cpu->buffers[2].B, i+4, memory[12 + mem]);
 		printf("                  |_______________________________________|\t x%04X: x%04X\n", i+5, memory[13 + mem]);
 	} else {
 		printf("                   _______\t\t\t\t\t x%04X: x%04X\n", i+1, memory[9 + mem]);
 		printf("                  |       |\t\t\t\t\t x%04X: x%04X\n", i+2, memory[10 + mem]);
-		printf("             EBUFF|  NOP  |\t\t\t\t\t x%04X: x%04X\n", i+3, memory[11 + mem]);
+		printf("             EBUFF|  NOP  | %c\t\t\t\t\t x%04X: x%04X\n", cpu->buffers[2].stalled, i+3, memory[11 + mem]);
 		printf("                  |       |\t\t\t\t\t x%04X: x%04X\n", i+4, memory[12 + mem]);
 		printf("                  |_______|\t\t\t\t\t x%04X: x%04X\n", i+5, memory[13 + mem]);
 	
@@ -210,13 +210,13 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 	if (cpu->buffers[3].IR != NOP) {
 		printf("                   _______________________________________\t x%04X: x%04X\n", i+6, memory[14 + mem]);
 		printf("                  |                                       |\t x%04X: x%04X\n", i+7, memory[15 + mem]);
-		printf("             MBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  |\n");
+		printf("             MBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  | %c\n", cpu->buffers[3].stalled);
 		printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\n", cpu->buffers[3].PC, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, cpu->buffers[3].B);
 		printf("                  |_______________________________________|\n\n");
 	} else {
 		printf("                   _______\t\t\t\t\t x%04X: x%04X\n", i+6, memory[14 + mem]);
 		printf("                  |       |\t\t\t\t\t x%04X: x%04X\n", i+7, memory[15 + mem]);
-		printf("             MBUFF|  NOP  |\n");
+		printf("             MBUFF|  NOP  | %c\n", cpu->buffers[3].stalled);
 		printf("                  |       |\n");
 		printf("                  |_______|\n\n");
 	
@@ -550,6 +550,7 @@ int controller (CPU_p cpu, int isRunning) {
 	int value = 0, stepCounter = 1;
     state = STORE;
 	int j;
+	struct BUFFER tempHolder;
 	Register predecodeValue = 0;
 	
 	if(isRunning && encounteredBreakPont(cpu)) {
@@ -564,6 +565,7 @@ int controller (CPU_p cpu, int isRunning) {
 				strcpy(temp, "STORE");
 				if (cpu->buffers[3].Opcode == LDI || cpu->buffers[3].Opcode == STI) {
 					cpu->buffers[2].isStalled = 1;
+					cpu->buffers[2].stalled = 'S';
 					if (cpu->buffers[3].Opcode == STI) {
 						cpu->buffers[3].Opcode = ST;
 					} else {
@@ -631,29 +633,59 @@ int controller (CPU_p cpu, int isRunning) {
 					}
                     switch (cpu->buffers[3].Opcode) {
                         case ST:
-							printf("in ST\n");
-							printBuffer(cpu, cpu->buffers[3]);
+							//printf("in ST\n");
+							//printBuffer(cpu, cpu->buffers[3]);
 							//printf("value in B: 0x%04X\n", cpu->buffers[2].B);
 							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].Rd];
-							printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
+							cpu->buffers[2].isStalled = 1;
+							cpu->buffers[2].stalled = 'S';
+							cpu->hasAccessedMem = 1;
+							cpu->memStepCount = 10;
+							tempHolder = cpu->buffers[3];
+							//printf("value in memory: 0x%04X\n", memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL]);
 							break;
                         case STR:
 							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->buffers[3].B;
+							cpu->buffers[2].isStalled = 1;
+							cpu->buffers[2].stalled = 'S';
+							cpu->hasAccessedMem = 1;
+							cpu->memStepCount = 10;
+							tempHolder = cpu->buffers[3];
 							break;
                         case STI:  //not sure of how to handle STI yet
-							printf("in STI\n");
+							//printf("in STI\n");
 							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							cpu->buffers[2].isStalled = 1;
+							cpu->buffers[2].stalled = 'S';
+							cpu->hasAccessedMem = 1;
+							cpu->memStepCount = 10;
+							tempHolder = cpu->buffers[3];
 							//printf("value in A: 0x%04X\n");
-							printBuffer(cpu, cpu->buffers[3]);
+							//printBuffer(cpu, cpu->buffers[3]);
 							break;
                         case LD:
 							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							cpu->buffers[2].isStalled = 1;
+							cpu->buffers[2].stalled = 'S';
+							cpu->hasAccessedMem = 1;
+							cpu->memStepCount = 10;
+							tempHolder = cpu->buffers[3];
 							break;
                         case LDR:
 							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							cpu->buffers[2].isStalled = 1;
+							cpu->buffers[2].stalled = 'S';
+							cpu->hasAccessedMem = 1;
+							cpu->memStepCount = 10;
+							tempHolder = cpu->buffers[3];
 							break;
                         case LDI:
 							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							cpu->buffers[2].isStalled = 1;
+							cpu->buffers[2].stalled = 'S';
+							cpu->hasAccessedMem = 1;
+							cpu->memStepCount = 10;
+							tempHolder = cpu->buffers[3];
 							//this will need to call LD afterwards
 							break;
 						case PP:
@@ -662,12 +694,32 @@ int controller (CPU_p cpu, int isRunning) {
 							} else {
 								memory[cpu->buffers[3].A - START_MEM] = cpu->r[cpu->buffers[3].Rd];
 							}
+							cpu->buffers[2].isStalled = 1;
+							cpu->buffers[2].stalled = 'S';
+							cpu->hasAccessedMem = 1;
+							cpu->memStepCount = 10;
+							tempHolder = cpu->buffers[3];
 							break;
                     }
                 }
-				if (cpu->buffers[2].isStalled) {
+				
+				for (; cpu->memStepCount > 0; cpu->memStepCount--) {
+					printf("in here\n");
+					cpu->buffers[3] = initBuffer();
+					displayScreen(cpu, 0, 1, stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
+					scanf("%c", &charToPrint);
+				}
+				
+				if (cpu->memStepCount <= 0 && cpu->hasAccessedMem) {
+					printf("or here\n");
+					cpu->hasAccessedMem = 0;
+					cpu->buffers[3] = tempHolder;
+				}
+				
+				if (cpu->buffers[3].Opcode == STI || cpu->buffers[3].Opcode == LDI) {
 					state = STORE;
 					cpu->buffers[2].isStalled = 0;
+					cpu->buffers[2].stalled = ' ';
 				} else {
 					state = EXECUTE;
 				}
@@ -906,6 +958,8 @@ void cpuInit(CPU_p cpu) {
 	cpu->MDR = 0x0000;
 	cpu->A = 0x0000;
 	cpu->B = 0x0000;
+	cpu->hasAccessedMem = 0; 
+	cpu->memStepCount = 0;
 	cpu->reachedInput = 0;
 	cpu->N = 0;
 	cpu->Z = 0;
