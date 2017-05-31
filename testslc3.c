@@ -152,7 +152,7 @@ char getch() {
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount, int collisionFound, char *stage) {
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 5; i++) {
 		printf("\n");
 	}
 	
@@ -614,11 +614,11 @@ int controller (CPU_p cpu, int isRunning) {
 						case PP:
 							//cpu->r[6] = cpu->buffers[3].A;
 							
-							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
+							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) { // pop
 								cpu->r[cpu->buffers[3].Rd] = cpu->buffers[3].B;
-								cpu->r[6] = cpu->r[6] + 1;
-							} else {
-								cpu->r[6] = cpu->r[6] - 1;
+								cpu->r[6]++;
+							} else { // push
+								cpu->r[6]--;
 							}
 							break;
 					}
@@ -633,6 +633,7 @@ int controller (CPU_p cpu, int isRunning) {
 					
 					cpu->buffers[0] = initBuffer();
 					cpu->buffers[1] = initBuffer();
+					cpu->buffers[3] = cpu->buffers[2];
                 } else {
 					if (!cpu->buffers[2].isStalled) {
 						cpu->buffers[3] = cpu->buffers[2];
@@ -687,10 +688,13 @@ int controller (CPU_p cpu, int isRunning) {
 							tempHolder = cpu->buffers[3];
 							break;
 						case PP:
-							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) {
-								cpu->buffers[3].B = memory[cpu->buffers[3].A];
-							} else {
-								memory[cpu->buffers[3].A - START_MEM] = cpu->r[cpu->buffers[3].Rd];
+							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) { // pop
+								printf("\nvalue in A = 0x%04X\n", cpu->buffers[3].A);
+								cpu->buffers[3].B = memory[(cpu->buffers[3].A + 1) - CONVERT_TO_DECIMAL];
+								printf("value in B = 0x%04X\n", cpu->buffers[3].B);
+								memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = 0x0; // clear this spot in memory
+							} else { // push
+								memory[(cpu->buffers[3].A) - START_MEM] = cpu->r[cpu->buffers[3].Rd];
 							}
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
@@ -702,6 +706,7 @@ int controller (CPU_p cpu, int isRunning) {
                 }
 				
 				for (; cpu->memStepCount > 0; cpu->memStepCount--) {
+					printf("in here\n");
 					cpu->buffers[3] = initBuffer();
 					if (!isRunning) {
 						displayScreen(cpu, 0, 1, cpu->prefetch.stepCounter++, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
@@ -713,15 +718,18 @@ int controller (CPU_p cpu, int isRunning) {
 				}
 				
 				if (cpu->memStepCount <= 0 && cpu->hasAccessedMem) {
+					printf("or here\n");
 					cpu->hasAccessedMem = 0;
 					cpu->buffers[3] = tempHolder;
 				}
 				
 				if (cpu->buffers[3].Opcode == STI || cpu->buffers[3].Opcode == LDI) {
+					printf("not here\n");
 					state = STORE;
 					cpu->buffers[2].isStalled = 0;
 					cpu->buffers[2].stalled = ' ';
 				} else {
+					printf("got here\n");
 					state = EXECUTE;
 				}
                 break;
@@ -823,11 +831,11 @@ int controller (CPU_p cpu, int isRunning) {
 							cpu->buffers[2].A = cpu->buffers[2].PC + sext9(cpu->buffers[2].SEXT);
 							break;
 						case PP:
-							if(cpu->buffers[2].IR & PUSH_POP_BIT_MASK) {
+							if(cpu->buffers[2].IR & PUSH_POP_BIT_MASK) { // pop
 								//cpu->buffers[2].A = cpu->buffers[2].A - 1;
-							} else {
-								printf("here\n");
-								cpu->buffers[2].A = cpu->buffers[2].A - 1;
+							} else { // push
+								//printf("here\n");
+								//cpu->buffers[2].A = cpu->buffers[2].A - 1;
 							}
 							break;
 					}
