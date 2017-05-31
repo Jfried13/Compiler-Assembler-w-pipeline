@@ -394,7 +394,6 @@ void editBreakPoint(CPU_p cpu) {
 	scanf("%04X", &breakPoint);
 	int i;
 	int found = 0;
-	printf("Enter a breakpoint: ");
 	for(i = 0; i < MAX_BREAKPOINTS; i++) {
 		//User wants to remove this breakpoint
 		if (cpu->breakPoints[i] == breakPoint) {
@@ -416,11 +415,6 @@ void editBreakPoint(CPU_p cpu) {
 			}		
 		}
 	}
-	
-	printf("breakPoints:");
-	for(i = 0; i < 4; i++) {
-		printf("0x%04X ", cpu->breakPoints[i]);
- 	}
 }
 
 
@@ -785,9 +779,7 @@ int controller (CPU_p cpu, int isRunning) {
 						case TRAP:
 							cpu->r[7] = cpu->buffers[2].PC;
 							value = trap(cpu, cpu->buffers[2].B);
-							//start NOP stall
 							if (value == 1) {
-								//displayScreen(cpu, 0);
 								printf("\n\n\n    Program finished. Press any key to end ");
 								getch();
 								return 0;
@@ -805,7 +797,6 @@ int controller (CPU_p cpu, int isRunning) {
 							}
 							cpu->buffers[1].isStalled = 1;
 							cpu->prefetch.head = 8;
-							//start NOP stall
 							break;
 						case JMP:
 							cpu->PC = cpu->r[cpu->buffers[2].A];
@@ -1047,8 +1038,8 @@ void writeMemory(char * fileToWriteToName) {
 			printf("Enter the end of memory to save to: x");
 			scanf("%4x", &memoryEnd);
 			for(int i=memoryStart; i <= memoryEnd; i++) {
-				printf("i = %i i = x%04x\n", i, memory[i - startMem]);
-				fprintf(filePtr, "%04x\n", memory[i - startMem]);
+				//printf("i = %i i = x%04x\n", i, memory[i - startMem]);
+				fprintf(filePtr, "%04X\r\n", memory[i - startMem]);
 			}
 			fclose(filePtr);
 		}
@@ -1062,8 +1053,7 @@ void writeMemory(char * fileToWriteToName) {
 		scanf("%4x", &memoryEnd);
 		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
 		for(int i=memoryStart; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - startMem]);
-			fprintf(filePtr, "%04x\n", memory[i - startMem]);
+			fprintf(filePtr, "%04X\r\n", memory[i - startMem]);
 		}
 		fclose(filePtr);
 	}
