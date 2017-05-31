@@ -14,6 +14,10 @@ char getch ();
 
 void setFlags (CPU_p, unsigned int, unsigned int, unsigned int);
 
+int encounteredBreakPoint (CPU_p, Register);
+
+void editBreakPoint (CPU_p);
+
 void writeMemory(char * fileToWriteToName);
 
 
@@ -21,6 +25,7 @@ void writeMemory(char * fileToWriteToName);
 //unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
+int startMem;
 
 
 /*
@@ -76,12 +81,12 @@ int trap(CPU_p cpu, int trap_vector) {
 		case PUTS:
 			cpu->reachedInput = 0;
 			i = 0;
-			temp = (char ) memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+			temp = (char ) memory[(cpu->r[0] - startMem + i)];
 			printf("\n\nOutput:  ");
 			while ((temp)) {  
 			  printf("%c", (temp));
 			  i++;
-			  temp = memory[(cpu->r[0] - CONVERT_TO_DECIMAL + i)];
+			  temp = memory[(cpu->r[0] - startMem + i)];
 			}
 			//printf("\n");
 			break;
@@ -111,16 +116,6 @@ void setCC(CPU_p cpu, Register Rd) {
 		cpu->P = 1;
 	}
 }
-	
-
-/*
-	This function sets the appropriate flags.
-*/
-void setFlags (CPU_p cpu, unsigned int neg, unsigned int zero, unsigned int pos) {
-	cpu->N = neg;
-	cpu->Z = zero;
-	cpu->P = pos;
-}
 
 
 /*
@@ -146,6 +141,13 @@ char getch() {
 	return (buf); 
 }
 
+void printBreakpoint(CPU_p cpu, Register pc) {
+	if (encounteredBreakPoint(cpu, pc)) {
+		printf("*\n");
+	} else {
+		printf("\n");
+	}
+}
 
 /*
 	This function displays the debug screen with LOAD, STEP, DISPLAY MEM, RUN, or EXIT
@@ -160,56 +162,85 @@ int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount
 		printf("\t\tWelcome to the LC-3 Pipeline Simulator\n\n");
 	}
 	
-	int i = START_MEM + mem;
+	int i = startMem + mem;
 	if (cpu->buffers[0].IR != NOP) {
 		printf("Registers          ______________\t\t\t\t    Memory\n");
-		printf("R%d: x%04X         |              |\t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
-		printf("R%d: x%04X    FBUFF|  PC:    IR:  | %c\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], cpu->buffers[0].stalled, i+1, memory[1 + mem]);
-		printf("R%d: x%04X         | x%04X  x%04X |\t\t\t\t x%X: x%04X\n", 2, cpu->r[2], cpu->buffers[0].PC, cpu->buffers[0].IR, i+2, memory[2 + mem]);
-		printf("R%d: x%04X         |______________|\t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
+		printf("R%d: x%04X         |              |\t\t\t\t x%X: x%04X", 0, cpu->r[0], i, memory[mem]);
+		printBreakpoint(cpu, i);
+		printf("R%d: x%04X    FBUFF|  PC:    IR:  | %c\t\t\t\t x%X: x%04X", 1, cpu->r[1], cpu->buffers[0].stalled, i+1, memory[1 + mem]);
+		printBreakpoint(cpu, i+1);
+		printf("R%d: x%04X         | x%04X  x%04X |\t\t\t\t x%X: x%04X", 2, cpu->r[2], cpu->buffers[0].PC, cpu->buffers[0].IR, i+2, memory[2 + mem]);
+		printBreakpoint(cpu, i+2);
+		printf("R%d: x%04X         |______________|\t\t\t\t x%X: x%04X", 3, cpu->r[3], i+3, memory[3 + mem]);
+		printBreakpoint(cpu, i+3);
 	} else {
 		printf("Registers          _______\t\t\t\t\t    Memory\n");
-		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 0, cpu->r[0], i, memory[mem]);
-		printf("R%d: x%04X    FBUFF|  NOP  | %c\t\t\t\t\t x%X: x%04X\n", 1, cpu->r[1], cpu->buffers[0].stalled, i+1, memory[1 + mem]);
-		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 2, cpu->r[2], i+2, memory[2 + mem]);
-		printf("R%d: x%04X         |_______|\t\t\t\t\t x%X: x%04X\n", 3, cpu->r[3], i+3, memory[3 + mem]);
+		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X", 0, cpu->r[0], i, memory[mem]);
+		printBreakpoint(cpu, i);
+		printf("R%d: x%04X    FBUFF|  NOP  | %c\t\t\t\t\t x%X: x%04X", 1, cpu->r[1], cpu->buffers[0].stalled, i+1, memory[1 + mem]);
+		printBreakpoint(cpu, i+1);
+		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X", 2, cpu->r[2], i+2, memory[2 + mem]);
+		printBreakpoint(cpu, i+2);
+		printf("R%d: x%04X         |_______|\t\t\t\t\t x%X: x%04X", 3, cpu->r[3], i+3, memory[3 + mem]);
+		printBreakpoint(cpu, i+3);
 	
 	}
 	
 	if (cpu->buffers[1].IR != NOP) {
-		printf("R%d: x%04X          _______________________________________\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
-		printf("R%d: x%04X         |                                       |\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
-		printf("R%d: x%04X    DBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  | %c\t x%X: x%04X\n", 6, cpu->r[6], cpu->buffers[1].stalled, i+6, memory[6 + mem]);
-		printf("R%d: x%04X         | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%X: x%04X\n", 7, cpu->r[7], cpu->buffers[1].PC, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B, i+7, memory[7 + mem]);
-		i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
-		printf("                  |_______________________________________|\t x%04X: x%04X\n", i, memory[8 + mem]);
+		printf("R%d: x%04X          _______________________________________\t x%X: x%04X", 4, cpu->r[4], i+4, memory[4 + mem]);
+		printBreakpoint(cpu, i+4);
+		printf("R%d: x%04X         |                                       |\t x%X: x%04X", 5, cpu->r[5], i+5, memory[5 + mem]);
+		printBreakpoint(cpu, i+5);
+		printf("R%d: x%04X    DBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  | %c\t x%X: x%04X", 6, cpu->r[6], cpu->buffers[1].stalled, i+6, memory[6 + mem]);
+		printBreakpoint(cpu, i+6);
+		printf("R%d: x%04X         | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%X: x%04X", 7, cpu->r[7], cpu->buffers[1].PC, cpu->buffers[1].Opcode, cpu->buffers[1].Rd, cpu->buffers[1].A, cpu->buffers[1].B, i+7, memory[7 + mem]);
+		printBreakpoint(cpu, i+7);
+		i = startMem + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
+		printf("                  |_______________________________________|\t x%04X: x%04X", i, memory[8 + mem]);
+		printBreakpoint(cpu, i);
 	} else {
-		printf("R%d: x%04X          _______\t\t\t\t\t x%X: x%04X\n", 4, cpu->r[4], i+4, memory[4 + mem]);
-		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 5, cpu->r[5], i+5, memory[5 + mem]);
-		printf("R%d: x%04X    DBUFF|  NOP  | %c\t\t\t\t\t x%X: x%04X\n", 6, cpu->r[6], cpu->buffers[1].stalled, i+6, memory[6 + mem]);
-		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X\n", 7, cpu->r[7], i+7, memory[7 + mem]);
-		i = START_MEM + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
-		printf("                  |_______|\t\t\t\t\t x%04X: x%04X\n", i, memory[8 + mem]);
+		printf("R%d: x%04X          _______\t\t\t\t\t x%X: x%04X", 4, cpu->r[4], i+4, memory[4 + mem]);
+		printBreakpoint(cpu, i+4);
+		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X", 5, cpu->r[5], i+5, memory[5 + mem]);
+		printBreakpoint(cpu, i+5);
+		printf("R%d: x%04X    DBUFF|  NOP  | %c\t\t\t\t\t x%X: x%04X", 6, cpu->r[6], cpu->buffers[1].stalled, i+6, memory[6 + mem]);
+		printBreakpoint(cpu, i+6);
+		printf("R%d: x%04X         |       |\t\t\t\t\t x%X: x%04X", 7, cpu->r[7], i+7, memory[7 + mem]);
+		printBreakpoint(cpu, i+7);
+		i = startMem + mem + BOTTOM_HALF; // replace i with the mem dump number if you want.
+		printf("                  |_______|\t\t\t\t\t x%04X: x%04X", i, memory[8 + mem]);
+		printBreakpoint(cpu, i);
 	}
 	
 	if (cpu->buffers[2].IR != NOP) {
-		printf("                   _______________________________________\t x%04X: x%04X\n", i+1, memory[9 + mem]);
-		printf("                  |                                       |\t x%04X: x%04X\n", i+2, memory[10 + mem]);
-		printf("             EBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  | %c\t x%04X: x%04X\n", cpu->buffers[2].stalled, i+3, memory[11 + mem]);
-		printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%04X: x%04X\n", cpu->buffers[2].PC, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, cpu->buffers[2].B, i+4, memory[12 + mem]);
-		printf("                  |_______________________________________|\t x%04X: x%04X\n", i+5, memory[13 + mem]);
+		printf("                   _______________________________________\t x%04X: x%04X", i+1, memory[9 + mem]);
+		printBreakpoint(cpu, i+1);
+		printf("                  |                                       |\t x%04X: x%04X", i+2, memory[10 + mem]);
+		printBreakpoint(cpu, i+2);
+		printf("             EBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  | %c\t x%04X: x%04X", cpu->buffers[2].stalled, i+3, memory[11 + mem]);
+		printBreakpoint(cpu, i+3);
+		printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\t x%04X: x%04X", cpu->buffers[2].PC, cpu->buffers[2].Opcode, cpu->buffers[2].Rd, cpu->buffers[2].A, cpu->buffers[2].B, i+4, memory[12 + mem]);
+		printBreakpoint(cpu, i+4);
+		printf("                  |_______________________________________|\t x%04X: x%04X", i+5, memory[13 + mem]);
+		printBreakpoint(cpu, i+5);
 	} else {
-		printf("                   _______\t\t\t\t\t x%04X: x%04X\n", i+1, memory[9 + mem]);
-		printf("                  |       |\t\t\t\t\t x%04X: x%04X\n", i+2, memory[10 + mem]);
-		printf("             EBUFF|  NOP  | %c\t\t\t\t\t x%04X: x%04X\n", cpu->buffers[2].stalled, i+3, memory[11 + mem]);
-		printf("                  |       |\t\t\t\t\t x%04X: x%04X\n", i+4, memory[12 + mem]);
-		printf("                  |_______|\t\t\t\t\t x%04X: x%04X\n", i+5, memory[13 + mem]);
-	
+		printf("                   _______\t\t\t\t\t x%04X: x%04X", i+1, memory[9 + mem]);
+		printBreakpoint(cpu, i+1);
+		printf("                  |       |\t\t\t\t\t x%04X: x%04X", i+2, memory[10 + mem]);
+		printBreakpoint(cpu, i+2);
+		printf("             EBUFF|  NOP  | %c\t\t\t\t\t x%04X: x%04X", cpu->buffers[2].stalled, i+3, memory[11 + mem]);
+		printBreakpoint(cpu, i+3);
+		printf("                  |       |\t\t\t\t\t x%04X: x%04X", i+4, memory[12 + mem]);
+		printBreakpoint(cpu, i+4);
+		printf("                  |_______|\t\t\t\t\t x%04X: x%04X", i+5, memory[13 + mem]);
+		printBreakpoint(cpu, i+5);
 	}
 	
 	if (cpu->buffers[3].IR != NOP) {
-		printf("                   _______________________________________\t x%04X: x%04X\n", i+6, memory[14 + mem]);
-		printf("                  |                                       |\t x%04X: x%04X\n", i+7, memory[15 + mem]);
+		printf("                   _______________________________________\t x%04X: x%04X", i+6, memory[14 + mem]);
+		printBreakpoint(cpu, i+6);
+		printf("                  |                                       |\t x%04X: x%04X", i+7, memory[15 + mem]);
+		printBreakpoint(cpu, i+7);
 		printf("             MBUFF|  PC:    OP:    DR:    OPN1:    OPN2:  | %c\n", cpu->buffers[3].stalled);
 		printf("                  | x%04X  x%04X  x%04X   x%04X    x%04X  |\n", cpu->buffers[3].PC, cpu->buffers[3].Opcode, cpu->buffers[3].Rd, cpu->buffers[3].A, cpu->buffers[3].B);
 		printf("                  |_______________________________________|\n\n");
@@ -272,12 +303,10 @@ int dialog(CPU_p cpu) {
 					if (inputFile == NULL) {
 						printf("DIDN'T OPEN");
 						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-
-						//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 						break;
 					}
 					int i = 0;
-					fscanf(inputFile, "%04X", &dontDeleteThisGarbage);
+					fscanf(inputFile, "%04X", &startMem);
 					while (fscanf(inputFile, "%04X", &memory[i]) != EOF) {
 						i++;
 					}
@@ -295,55 +324,45 @@ int dialog(CPU_p cpu) {
 					if (isLoaded == 1) {
 						controller(cpu, 0);
 						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-
 						opNum = 0;
 					} else {
 						printf("No file loaded!");
 						displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-
-						//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					}
 					break;
 				case DISP_MEM:
 					printf("Position to move to? (in hex): ");
 					scanf("%4x", &memShift);
-					if(memShift - START_MEM > MAX_MEMORY - DISP_BOUNDARY) {
+					if(memShift - startMem > MAX_MEMORY - DISP_BOUNDARY) {
 						printf("Error: out of memory");
 						memShift = 0;
-						displayScreen(cpu, memShift - START_MEM, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-
-						//displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu, memShift - startMem, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
 						break;
 					} else {
-						displayScreen(cpu,memShift - START_MEM, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-
-						//displayScreen(cpu, memShift - START_MEM, 0, 0, 0, 0, charPtr);
+						displayScreen(cpu,memShift - startMem, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
 					}
 					break;
 				case EDIT:
 					printf("What memory address would you like to edit: ");
 					scanf("%04X", &placeInMemory);
-					printf("The contents of location 0x%04X is  0x%04X\n", placeInMemory, memory[placeInMemory - START_MEM]);
+					printf("The contents of location 0x%04X is  0x%04X\n", placeInMemory, memory[placeInMemory - startMem]);
 					printf("What would you like the new value in location 0x%04X to be: ", placeInMemory);
 					scanf("%s", &newMemoryValue);
 					printf("%s\n", newMemoryValue);
 					newValue = (short)strtol(newMemoryValue, &charPtr, 16);
-					memory[placeInMemory - START_MEM] = newValue;
+					memory[placeInMemory - startMem] = newValue;
 					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-
-					//displayScreen(cpu, placeInMemory - START_MEM - 7, 0, 0, 0, 0, charPtr);
 					break;
 				case RUN:
 					controller(cpu, 1);
 					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
-
-					//displayScreen(cpu, 0, 0, 0, 0, 0, charPtr);
 					break;
 				case EXIT:
 					printf("Simulation Terminated.");
 					break;
 				case SET_BRKPTS:
-
+					editBreakPoint(cpu);
+					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);
 					break;
 			}
 		}
@@ -352,11 +371,11 @@ int dialog(CPU_p cpu) {
 /*
 	This method compares the current value of PC against any breakpoints entered by the user. 
 */
-int encounteredBreakPont(CPU_p cpu) {
+int encounteredBreakPoint(CPU_p cpu, Register pc) {
 		int encountered = 0;
 		int i;
 		for (i = 0; i < MAX_BREAKPOINTS; i++) {
-			if(cpu->PC == cpu->breakPoints[i]) {
+			if(pc == cpu->breakPoints[i]) {
 				encountered = 1;
 				i = MAX_BREAKPOINTS;
 			}
@@ -369,7 +388,10 @@ int encounteredBreakPont(CPU_p cpu) {
 	If a match is found the breakPoint is removed from the collection. If a match isn't found the
 	breakPoint is added. 
 */
-void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
+void editBreakPoint(CPU_p cpu) {
+	unsigned int breakPoint;
+	printf("Enter Memory location of desired breakpoint: ");
+	scanf("%04X", &breakPoint);
 	int i;
 	int found = 0;
 	printf("Enter a breakpoint: ");
@@ -386,14 +408,19 @@ void editBreakPoint(CPU_p cpu, unsigned short breakPoint) {
 	//If this address doesn't exist find first available spot and add it to the collection of breakpoints
 	if(!found) {
 		for(i = 0; i < MAX_BREAKPOINTS; i++) {
-		//found the first open spot
-		if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
-			//Add in new break point and exit the loop;
-			cpu->breakPoints[i] = breakPoint;
-			i = MAX_BREAKPOINTS;
-		}		
+			//found the first open spot
+			if (cpu->breakPoints[i] == AVAILABLE_BRKPT) {
+				//Add in new break point and exit the loop;
+				cpu->breakPoints[i] = breakPoint;
+				i = MAX_BREAKPOINTS;
+			}		
+		}
 	}
-	}
+	
+	printf("breakPoints:");
+	for(i = 0; i < 4; i++) {
+		printf("0x%04X ", cpu->breakPoints[i]);
+ 	}
 }
 
 
@@ -476,6 +503,9 @@ int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCh
 	if (opcode == BR) {
 		nopCount = 2;
 	}
+	if (opcode == TRAP && (collisionCheck & SR_MASK) == HALT) {
+		nopCount = 2;
+	}
 	return nopCount;
 }
 
@@ -499,7 +529,7 @@ Register predecode (CPU_p cpu) {
 	if (cpu->prefetch.head >= 8) {
 		for (; i < cpu->PC + 8; i++, j++) {
 			
-			cpu->prefetch.values[j] = memory[i - CONVERT_TO_DECIMAL];
+			cpu->prefetch.values[j] = memory[i - startMem];
 		}		
 		cpu->prefetch.head = 0;
 		cpu->prefetch.nopCount = 79;
@@ -559,10 +589,11 @@ int controller (CPU_p cpu, int isRunning) {
 	struct BUFFER tempHolder;
 	Register predecodeValue = 0;
 	
-	if(isRunning && encounteredBreakPont(cpu)) {
-		isRunning = 0;
-	}
+	
     for (;;) {
+		if(isRunning && encounteredBreakPoint(cpu, cpu->PC)) {
+			isRunning = 0;
+		}
 		if (!isRunning) {
 			displayScreen(cpu, 0, 1, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
 		}
@@ -640,7 +671,7 @@ int controller (CPU_p cpu, int isRunning) {
 					}
                     switch (cpu->buffers[3].Opcode) {
                         case ST:
-							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->r[cpu->buffers[3].Rd];
+							memory[cpu->buffers[3].A - startMem] = cpu->r[cpu->buffers[3].Rd];
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
 							cpu->hasAccessedMem = 1;
@@ -648,7 +679,7 @@ int controller (CPU_p cpu, int isRunning) {
 							tempHolder = cpu->buffers[3];
 							break;
                         case STR:
-							memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = cpu->buffers[3].B;
+							memory[cpu->buffers[3].A - startMem] = cpu->buffers[3].B;
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
 							cpu->hasAccessedMem = 1;
@@ -656,7 +687,7 @@ int controller (CPU_p cpu, int isRunning) {
 							tempHolder = cpu->buffers[3];
 							break;
                         case STI:  //not sure of how to handle STI yet
-							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							cpu->buffers[3].A = memory[cpu->buffers[3].A - startMem];
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
 							cpu->hasAccessedMem = 1;
@@ -664,7 +695,7 @@ int controller (CPU_p cpu, int isRunning) {
 							tempHolder = cpu->buffers[3];
 							break;
                         case LD:
-							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							cpu->buffers[3].B = memory[cpu->buffers[3].A - startMem];
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
 							cpu->hasAccessedMem = 1;
@@ -672,7 +703,7 @@ int controller (CPU_p cpu, int isRunning) {
 							tempHolder = cpu->buffers[3];
 							break;
                         case LDR:
-							cpu->buffers[3].B = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							cpu->buffers[3].B = memory[cpu->buffers[3].A - startMem];
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
 							cpu->hasAccessedMem = 1;
@@ -680,7 +711,7 @@ int controller (CPU_p cpu, int isRunning) {
 							tempHolder = cpu->buffers[3];
 							break;
                         case LDI:
-							cpu->buffers[3].A = memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL];
+							cpu->buffers[3].A = memory[cpu->buffers[3].A - startMem];
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
 							cpu->hasAccessedMem = 1;
@@ -689,12 +720,10 @@ int controller (CPU_p cpu, int isRunning) {
 							break;
 						case PP:
 							if(cpu->buffers[3].IR & PUSH_POP_BIT_MASK) { // pop
-								printf("\nvalue in A = 0x%04X\n", cpu->buffers[3].A);
-								cpu->buffers[3].B = memory[(cpu->buffers[3].A + 1) - CONVERT_TO_DECIMAL];
-								printf("value in B = 0x%04X\n", cpu->buffers[3].B);
-								memory[cpu->buffers[3].A - CONVERT_TO_DECIMAL] = 0x0; // clear this spot in memory
+								cpu->buffers[3].B = memory[(cpu->buffers[3].A + 1) - startMem];
+								memory[cpu->buffers[3].A - startMem] = 0x0; // clear this spot in memory
 							} else { // push
-								memory[(cpu->buffers[3].A) - START_MEM] = cpu->r[cpu->buffers[3].Rd];
+								memory[(cpu->buffers[3].A) - startMem] = cpu->r[cpu->buffers[3].Rd];
 							}
 							cpu->buffers[2].isStalled = 1;
 							cpu->buffers[2].stalled = 'S';
@@ -706,7 +735,6 @@ int controller (CPU_p cpu, int isRunning) {
                 }
 				
 				for (; cpu->memStepCount > 0; cpu->memStepCount--) {
-					printf("in here\n");
 					cpu->buffers[3] = initBuffer();
 					if (!isRunning) {
 						displayScreen(cpu, 0, 1, cpu->prefetch.stepCounter++, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
@@ -718,18 +746,15 @@ int controller (CPU_p cpu, int isRunning) {
 				}
 				
 				if (cpu->memStepCount <= 0 && cpu->hasAccessedMem) {
-					printf("or here\n");
 					cpu->hasAccessedMem = 0;
 					cpu->buffers[3] = tempHolder;
 				}
 				
 				if (cpu->buffers[3].Opcode == STI || cpu->buffers[3].Opcode == LDI) {
-					printf("not here\n");
 					state = STORE;
 					cpu->buffers[2].isStalled = 0;
 					cpu->buffers[2].stalled = ' ';
 				} else {
-					printf("got here\n");
 					state = EXECUTE;
 				}
                 break;
@@ -830,14 +855,6 @@ int controller (CPU_p cpu, int isRunning) {
 						case STI:
 							cpu->buffers[2].A = cpu->buffers[2].PC + sext9(cpu->buffers[2].SEXT);
 							break;
-						case PP:
-							if(cpu->buffers[2].IR & PUSH_POP_BIT_MASK) { // pop
-								//cpu->buffers[2].A = cpu->buffers[2].A - 1;
-							} else { // push
-								//printf("here\n");
-								//cpu->buffers[2].A = cpu->buffers[2].A - 1;
-							}
-							break;
 					}
 				}
                 if(cpu->buffers[1].isStalled) {
@@ -909,7 +926,6 @@ int controller (CPU_p cpu, int isRunning) {
 						case NOP:
 							break;
 						case PP:
-							//cpu->r[6] = cpu->r[6] - 1;
 							cpu->buffers[1].A = cpu->r[6];
 							break;
 					}
@@ -920,7 +936,7 @@ int controller (CPU_p cpu, int isRunning) {
 				strcpy(temp, "FETCH");
 				predecodeValue = predecode(cpu);
 				if (predecodeValue != NOP) {
-					cpu->buffers[0].A = (cpu->PC - CONVERT_TO_DECIMAL);
+					cpu->buffers[0].A = (cpu->PC - startMem);
 					cpu->PC++;	// increment PC
 					cpu->buffers[0].B = memory[cpu->buffers[0].A];
 					cpu->ir = cpu->buffers[0].B;
@@ -968,6 +984,7 @@ void cpuInit(CPU_p cpu) {
 	cpu->r[7] = 0x0000;
 	cpu->ir = 0x0000;
 	cpu->PC = START_MEM;
+	startMem = START_MEM;
 	cpu->MAR = 0x0000;
 	cpu->MDR = 0x0000;
 	cpu->A = 0x0000;
@@ -1030,8 +1047,8 @@ void writeMemory(char * fileToWriteToName) {
 			printf("Enter the end of memory to save to: x");
 			scanf("%4x", &memoryEnd);
 			for(int i=memoryStart; i <= memoryEnd; i++) {
-				printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-				fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+				printf("i = %i i = x%04x\n", i, memory[i - startMem]);
+				fprintf(filePtr, "%04x\n", memory[i - startMem]);
 			}
 			fclose(filePtr);
 		}
@@ -1045,8 +1062,8 @@ void writeMemory(char * fileToWriteToName) {
 		scanf("%4x", &memoryEnd);
 		printf("start = %4x end = %4x\n", memoryStart, memoryEnd);
 		for(int i=memoryStart; i <= memoryEnd; i++) {
-			printf("i = %i i = x%04x\n", i, memory[i - START_MEM]);
-			fprintf(filePtr, "%04x\n", memory[i - START_MEM]);
+			printf("i = %i i = x%04x\n", i, memory[i - startMem]);
+			fprintf(filePtr, "%04x\n", memory[i - startMem]);
 		}
 		fclose(filePtr);
 	}
