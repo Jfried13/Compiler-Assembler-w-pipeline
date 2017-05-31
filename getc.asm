@@ -1,0 +1,8 @@
+		.ORIG x3000
+		GETC
+		OUT
+		GETC
+		OUT
+		GETC
+		HALT
+		.END
