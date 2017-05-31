@@ -2,7 +2,7 @@
  * Authors: Connor Lundberg, Daniel Ivanov
  * Date: 5/3/2017
  */
-#include "Other crap/tempslc3.h"
+#include "slc3Pipe.h"
 
 int controller (CPU_p, int);
 
@@ -21,8 +21,6 @@ void editBreakPoint (CPU_p);
 void writeMemory(char * fileToWriteToName);
 
 
-// you can define a simple memory module here for this program
-//unsigned short memory[MAX_MEMORY];   // 500 words of memory enough to store simple program
 int isLoaded;
 int memShift;
 int startMem;
@@ -37,6 +35,9 @@ int sext6(int offset6) {
 }
 
 
+/*
+	This function is the offset11 sign extender.
+*/
 int sext11(int offset11) {
 	if (HIGH_ORDER_BIT_VALUE11 & offset11) return (offset11 | SEXT11_SIGN_EXTEND);
 	else return offset11 & SEXT11_MASK;
@@ -51,7 +52,9 @@ int sext9(int offset9) {
 	else return offset9;
 }
 
-
+/*
+	This fucntion is the immed5 sign extender.
+*/
 int sext5(int immed5) {
 	if (HIGH_ORDER_BIT_VALUE5 & immed5) return (immed5 | SEXT5_SIGN_EXTEND);
 	else return (immed5 & SEXT5_MASK);
@@ -141,6 +144,11 @@ char getch() {
 	return (buf); 
 }
 
+
+/*
+	A helper function to print the breakpoint symbol. This is used in displayScreen to keep
+	from having to use the same if else statement every time we choose to print the * character.
+*/
 void printBreakpoint(CPU_p cpu, Register pc) {
 	if (encounteredBreakPoint(cpu, pc)) {
 		printf("*\n");
@@ -150,7 +158,7 @@ void printBreakpoint(CPU_p cpu, Register pc) {
 }
 
 /*
-	This function displays the debug screen with LOAD, STEP, DISPLAY MEM, RUN, or EXIT
+	This function displays the debug screen with LOAD, SAVE, STEP, DISPLAY MEM, EDIT, RUN, (UN)SET BREAKPTS, or EXIT
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount, int collisionFound, char *stage) {
@@ -368,6 +376,7 @@ int dialog(CPU_p cpu) {
 		}
 }
 
+
 /*
 	This method compares the current value of PC against any breakpoints entered by the user. 
 */
@@ -382,6 +391,7 @@ int encounteredBreakPoint(CPU_p cpu, Register pc) {
 		}
 		return encountered; 
 }
+
 
 /*
 	This function takes a passed breakPoint and searches the existing collection of breakpoints.
@@ -418,6 +428,9 @@ void editBreakPoint(CPU_p cpu) {
 }
 
 
+/*
+	A helper function to print a single buffer. Used in debugging.
+*/
 void printBuffer(CPU_p cpu, struct BUFFER buff) {
 	if (buff.PC == NOP) printf("PC = NOP\n");
 	else printf ("PC = %04X\n", buff.PC);
@@ -447,6 +460,9 @@ void printBuffer(CPU_p cpu, struct BUFFER buff) {
 }
 
 
+/*
+	A helper function to print all of the buffers. Used in debugging.
+*/
 void printAllBuffers(CPU_p cpu) {
 	for (int i = 0; i < MAX_BUFFERS; i++) {
         printf("Buffer #: %d\n", i);
@@ -456,6 +472,10 @@ void printAllBuffers(CPU_p cpu) {
 }
 
 
+/*
+	This is the meat of our Predecoder. This will be deciding if the current head of the Prefetch is
+	colliding with the passed in hex value. If so, it will return 4 minus the difference between the two. 
+*/
 int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCheck, int collisionPos) {
 	int nopCount = 0, Rd = 0, Rs1 = 0, Rs2 = -1;
 	int opcode = collisionCheck >> OPCODE_SHIFT;
@@ -503,6 +523,10 @@ int checkForCollision(Register headOfPrefetch, int headPos, Register collisionCh
 	return nopCount;
 }
 
+
+/*
+	A helper method to print the contents of the Prefetch array for debugging.
+*/
 void printPrefetch (CPU_p cpu) {
 	printf("\n");
 	for (int i = 0; i < PREFETCH_SIZE; i++) {
@@ -548,6 +572,9 @@ Register predecode (CPU_p cpu) {
 }
 
 
+/*
+	A helper function to initialize a Buffer struct and pass it back.
+*/
 struct BUFFER initBuffer() {
 	struct BUFFER buff;
 	
@@ -583,7 +610,6 @@ int controller (CPU_p cpu, int isRunning) {
 	struct BUFFER tempHolder;
 	Register predecodeValue = 0;
 	
-	
     for (;;) {
 		if(isRunning && encounteredBreakPoint(cpu, cpu->PC)) {
 			isRunning = 0;
@@ -592,7 +618,9 @@ int controller (CPU_p cpu, int isRunning) {
 			displayScreen(cpu, 0, 1, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, temp);
 		}
         switch (state) {
-			case STORE: // Look at ST. Microstate 16 is the store to memory
+			case STORE: // Here in STORE we simply are sending the information from 
+						// the MBUFF into the DPRF. If the opcode from MBUFF is an 
+						// LDI or STI it will just go back to MEM for a second go around.
 				strcpy(temp, "STORE");
 				if (cpu->buffers[3].Opcode == LDI || cpu->buffers[3].Opcode == STI) {
 					cpu->buffers[2].isStalled = 1;
@@ -650,7 +678,11 @@ int controller (CPU_p cpu, int isRunning) {
 					state = MEM;
 				}
 				break;
-			case MEM:
+			case MEM:	// In MEM we simulate the act of going to Memory to Store or
+						// Load items. It then "pauses" the previous buffers and reads
+						// in the 10 NOPs it takes to go to Memory. This also handles cases
+						// for when the buffers are stalled for BR, JMP, JSR, JSRR, and
+						// STI and LDI instructions.
 				strcpy(temp, "MEM");
 				//may need to add in a check if the last buffer's PC is NOP (same as other states).
                 if (cpu->buffers[1].isStalled) {
@@ -752,7 +784,10 @@ int controller (CPU_p cpu, int isRunning) {
 					state = EXECUTE;
 				}
                 break;
-			case EXECUTE: // Note that ST does not have an execute microstate
+			case EXECUTE: 	// In EXECUTE the A and B values will be used together corresponding to what 
+							// the opcode is. If it is some kind of LD or ST type opcode, it will make the
+							// address that will be used to go into Memory. This also performs the TRAPs in 
+							// this state. If a HALT is found it will end here.
 				strcpy(temp, "EXECUTE");
 				if (cpu->buffers[1].PC == NOP) {
 					cpu->buffers[2] = cpu->buffers[1];
@@ -854,14 +889,15 @@ int controller (CPU_p cpu, int isRunning) {
                     state = IDRR;
                 }
                 break;
-			case IDRR:
+			case IDRR:	// This is a combination of Decode, Eval_Addr, and Fetch_Op. It handles the simulation
+						// of the DECODE state that pulls the values out of the Dual-Ported Register File.
 				strcpy(temp, "IDRR");
 				if (cpu->buffers[0].PC == NOP) {
 					cpu->buffers[1] = cpu->buffers[0];
 				} else {			
 					cpu->buffers[1].PC = cpu->buffers[0].PC;
 					cpu->buffers[1].IR = cpu->buffers[0].IR;
-					cpu->buffers[1].Opcode = cpu->buffers[0].IR >> OPCODE_SHIFT;			//Decode Stage
+					cpu->buffers[1].Opcode = cpu->buffers[0].IR >> OPCODE_SHIFT;			
 					cpu->buffers[1].Rd = cpu->buffers[0].IR & DR_MASK;
 					cpu->buffers[1].Rd = (short)cpu->buffers[1].Rd >> DR_SHIFT;
 					cpu->buffers[1].A = cpu->buffers[0].IR & SR_MASK;
@@ -870,7 +906,7 @@ int controller (CPU_p cpu, int isRunning) {
 					cpu->buffers[1].SEXT = cpu->buffers[0].IR & SR_MASK;
 					BaseR = (cpu->buffers[0].IR & BASE_MASK) >> SR_SHIFT;
 					
-					switch (cpu->buffers[1].Opcode) {							//Fetch Operand Stage
+					switch (cpu->buffers[1].Opcode) {							
 						case ADD:
 							if(HIGH_ORDER_BIT_VALUE6 & cpu->buffers[1].IR){ //0000|0000|0010|0000
 								cpu->buffers[1].A = cpu->r[cpu->buffers[1].A];
@@ -923,7 +959,9 @@ int controller (CPU_p cpu, int isRunning) {
 				}
                 state = FETCH;
 				break;
-            case FETCH: // microstates 18, 33, 35 in the book
+            case FETCH: // In the FETCH state this will simply call the predecode and 
+						// pass that into the FETCH which will pull it apart and send itoa
+						// to IDRR.
 				strcpy(temp, "FETCH");
 				predecodeValue = predecode(cpu);
 				if (predecodeValue != NOP) {
@@ -962,7 +1000,7 @@ int controller (CPU_p cpu, int isRunning) {
 }
 
 /*
-	This function initializes the cpu fields
+	This function initializes the cpu fields, buffers, and the prefetch.
 */
 void cpuInit(CPU_p cpu) {
 	cpu->r[0] = 0x0000;
@@ -1006,7 +1044,11 @@ void cpuInit(CPU_p cpu) {
 	}
 }
 
-//returns 1 if true 0 if false
+
+/*
+	This is a helper function that simply checks if the specified file name exists in the 
+	current directory.
+*/
 int checkIfFileExists(char* fileToCheckIfExists) {
 	FILE* filePtr;
 	filePtr = fopen(fileToCheckIfExists, "r");
@@ -1019,13 +1061,16 @@ int checkIfFileExists(char* fileToCheckIfExists) {
 	}
 }
 
-//need to #define TRAP25 61477;
+
+/*
+	Writes the file specified out to the current directory.
+*/
 void writeMemory(char * fileToWriteToName) {
 	FILE * filePtr;
 	int TRAP25 = 61477;
 	char shouldOverwrite;
 	unsigned int memoryStart, memoryEnd; 
-	//the file exists so promt the user to see if they 
+	//the file exists so prompt the user to see if they 
 	//are ok with overwritting the preexisting file right here
 	//include if/else statement to check user decision for overwriting
 	if(checkIfFileExists(fileToWriteToName)) {
@@ -1038,7 +1083,6 @@ void writeMemory(char * fileToWriteToName) {
 			printf("Enter the end of memory to save to: x");
 			scanf("%4x", &memoryEnd);
 			for(int i=memoryStart; i <= memoryEnd; i++) {
-				//printf("i = %i i = x%04x\n", i, memory[i - startMem]);
 				fprintf(filePtr, "%04X\r\n", memory[i - startMem]);
 			}
 			fclose(filePtr);
@@ -1064,7 +1108,7 @@ void writeMemory(char * fileToWriteToName) {
 	This is the main function that starts the program off.
 */
 int main(int argc, char* argv[]){
-
+	//setvbuf needs to be used in order for getch to work correctly
 	setvbuf(stdout, NULL, _IONBF, 0);
 	isLoaded = 0;
 	memShift = 0;
