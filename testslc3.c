@@ -152,7 +152,7 @@ char getch() {
 	commands to use.
 */
 int displayScreen(CPU_p cpu, int mem, int isRunning, int stepCount, int nopCount, int collisionFound, char *stage) {
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 100; i++) {
 		printf("\n");
 	}
 	
@@ -289,7 +289,8 @@ int dialog(CPU_p cpu) {
 					printf("Enter a file name to save to: ");
 					scanf("%s", &fileName);
 					writeMemory(fileName);
-					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);					break;
+					displayScreen(cpu, 0, 0, cpu->prefetch.stepCounter, cpu->prefetch.nopCount, cpu->prefetch.collisionFound, charPtr);					
+					break;
 				case STEP:
 					if (isLoaded == 1) {
 						controller(cpu, 0);
